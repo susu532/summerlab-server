@@ -1,9 +1,9 @@
 import { GameModeInfo } from "./GameMode";
 import { BLOCK, CHUNK_SIZE, WORLD_Y_OFFSET } from "../constants";
 import { ChunkManager } from "../ChunkManager";
-import { getVoidTrailBlock } from "../../game/generation/VoidTrailGenerator";
+import { getSummerLabBlock } from "../../game/generation/SummerLabGenerator";
 
-export class VoidTrailMode implements GameModeInfo {
+export class SummerLabMode implements GameModeInfo {
   name: string;
   allowPvP = true;
   allowMobSpawns = false;
@@ -20,7 +20,11 @@ export class VoidTrailMode implements GameModeInfo {
     bakedBlocks: Map<string, number>,
     currentBlock: number = 0,
   ): boolean {
-    return y <= 0 && y >= -2;
+    if (y <= 0 && y >= -2) {
+       const initialBlock = getSummerLabBlock(Math.floor(x), Math.floor(y), Math.floor(z));
+       if (initialBlock !== 0) return true;
+    }
+    return false;
   }
 
   getBlockAt(
@@ -43,7 +47,7 @@ export class VoidTrailMode implements GameModeInfo {
     );
     if (chunkType !== undefined) return chunkType;
 
-    return getVoidTrailBlock(x, Math.floor(y), z);
+    return getSummerLabBlock(x, Math.floor(y), z);
   }
 
   getRespawnPosition(

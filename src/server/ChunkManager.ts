@@ -28,6 +28,8 @@ export class ChunkManager {
   }
 
   loadChunksFromDB() {
+    if (this.worldName.startsWith('summerlab')) return; // Do not load previous chunks for summerlab
+    
     try {
       const rows = this.getAllChunks.all(this.worldName) as any[];
       for (const row of rows) {
@@ -128,7 +130,9 @@ export class ChunkManager {
     for (const chunkId of chunksArray) {
       const changes = this.chunks.get(chunkId);
       if (changes) {
-        chunksData.push({ chunkId, data: Buffer.from(changes.buffer) });
+        if (!this.worldName.startsWith('summerlab')) {
+          chunksData.push({ chunkId, data: Buffer.from(changes.buffer) });
+        }
         savedCount++;
       }
       this.dirtyChunks.delete(chunkId);
@@ -146,6 +150,8 @@ export class ChunkManager {
   }
 
   unloadIdleChunks(players: Record<string, any>, renderDistance: number) {
+    if (this.worldName.startsWith('summerlab')) return; // Do not unload for summerlab so changes persist in memory
+
     const activeChunkCoords = new Set<string>();
     for (const p of Object.values(players)) {
       if (!p.position || p.isBot) continue;

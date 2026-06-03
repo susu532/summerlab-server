@@ -3,7 +3,7 @@ import { createGameServer } from './GameServer.ts';
 import { HubMode } from './modes/HubMode.ts';
 import { SkyBridgeMode } from './modes/SkyBridgeMode.ts';
 import { SkyCastlesMode } from './modes/SkyCastlesMode.ts';
-import { VoidTrailMode } from './modes/VoidTrailMode.ts';
+import { SummerLabMode } from './modes/SummerLabMode.ts';
 import { DungeonDelverMode } from './modes/DungeonDelverMode.ts';
 import { BattleRoyaleMode } from './modes/BattleRoyaleMode.ts';
 import { SkyIslandMode } from './modes/SkyIslandMode.ts';
@@ -15,8 +15,8 @@ import path from 'path';
 import fs from 'fs';
 
 // Extract data passed from main thread via workerData
-const baseName = workerData?.BASE_NAME || 'dungeondelver';
-const instanceId = workerData?.INSTANCE_ID || '/dungeondelver_1';
+const baseName = workerData?.BASE_NAME || 'summerlab';
+const instanceId = workerData?.INSTANCE_ID || '/summerlab_1';
 
 // We will proxy generation requests up to the main thread's Piscina pool
 const genWorker = parentPort!;
@@ -33,11 +33,11 @@ function getModeFactory(name: string) {
   if (name === 'hub') return new HubMode();
   // if (name === 'skybridge') return new SkyBridgeMode();
   // if (name === 'skycastles') return new SkyCastlesMode('/skycastles');
-  // if (name === 'voidtrail') return new VoidTrailMode('/voidtrail');
-  if (name === 'dungeondelver') return new DungeonDelverMode();
+  if (name === 'summerlab') return new SummerLabMode('/summerlab');
+  // if (name === 'dungeondelver') return new DungeonDelverMode();
   // if (name === 'battleroyale') return new BattleRoyaleMode();
   // if (name === 'skyisland') return new SkyIslandMode('/skyisland');
-  return new DungeonDelverMode();
+  return new SummerLabMode('/summerlab');
 }
 
 const mode = getModeFactory(baseName);

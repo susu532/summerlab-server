@@ -26,6 +26,10 @@ export interface GameContext {
   playerBuffers: Map<string, Buffer>;
   mobBuffers: Map<string, Buffer>;
   
+  globalSplats: Map<string, any[]>;
+  pendingSplats: any[];
+  pendingCleanSplats: string[];
+  
   spatialHash: Map<number, ITickMob[]>;
   playerHash: Map<number, IServerPlayer[]>;
 

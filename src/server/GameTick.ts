@@ -679,8 +679,9 @@ export function tick(ctx: GameContext, delta: number) {
           if (p.isBlocking) stateMask |= 64;
           if (p.isGliding) stateMask |= 128;
           if (!mode.name.startsWith('/dungeondelver') && Date.now() - (p.lastRespawnTime || 0) < 5000) stateMask |= 256;
+          if (p.isShooting) stateMask |= 512;
 
-          if (!p.packedData) p.packedData = new Float32Array(11);
+          if (!p.packedData) p.packedData = new Float32Array(12);
           const packedData = p.packedData as Float32Array;
           packedData[0] = Math.round(p.position.x * 100) / 100;
           packedData[1] = Math.round(p.position.y * 100) / 100;
@@ -693,6 +694,7 @@ export function tick(ctx: GameContext, delta: number) {
           packedData[8] = p.offHandItem || 0;
           packedData[9] = p.defense || 0;
           packedData[10] = Math.floor(p.health || 0);
+          packedData[11] = p.fluidColor !== undefined ? p.fluidColor : 4004868;
 
           const gridKey = getCellKey(Math.floor(p.position.x / PLAYER_CELL_SIZE), Math.floor(p.position.z / PLAYER_CELL_SIZE));
           let cellUpdates = hoistedPlayerUpdatesByGrid.get(gridKey);
@@ -732,7 +734,7 @@ export function tick(ctx: GameContext, delta: number) {
         }
 
         if (nearCount > 0) {
-          const size = 2 + (nearCount * 1) + nearIdStrLen + (nearCount * 11 * 4) + (nearCount * 4);
+          const size = 2 + (nearCount * 1) + nearIdStrLen + (nearCount * 12 * 4) + (nearCount * 4);
           let localOffset = 0;
           SHARED_NETWORK_BUFFER.writeUInt16LE(nearCount, localOffset); localOffset += 2;
 
@@ -750,7 +752,7 @@ export function tick(ctx: GameContext, delta: number) {
             localOffset = floatOffset;
 
             const floats = update.packed;
-            for (let f = 0; f < 11; f++) {
+            for (let f = 0; f < 12; f++) {
               SHARED_NETWORK_BUFFER.writeFloatLE(floats[f], localOffset);
               localOffset += 4;
             }

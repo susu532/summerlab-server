@@ -40,51 +40,6 @@ async function startServer() {
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
   });
-
-  app.post('/api/feedback', express.json(), async (req, res) => {
-    try {
-      const { message } = req.body;
-      if (message) {
-        // Log to an ephemeral local file as a backup
-        fs.appendFileSync(path.join(process.cwd(), 'feedback.txt'), `${new Date().toISOString()} - Feedback: ${message}\n`);
-        console.log(`[Feedback Received]: ${message}`);
-
-        // Send to Discord if webhook is configured
-        const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-        if (webhookUrl) {
-          if (!webhookUrl.includes('/api/webhooks/')) {
-            console.error('Invalid Discord Webhook URL. It must contain "/api/webhooks/". You provided a regular channel link.');
-            return res.json({ status: 'ok', warning: 'Invalid Discord Webhook URL configured in environment.' });
-          }
-
-          try {
-            const discordRes = await fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                content: `**New Game Feedback:**\n> ${message.replace(/\n/g, '\n> ')}`
-              })
-            });
-            
-            if (!discordRes.ok) {
-              console.error('Discord Webhook returned an error:', discordRes.status, await discordRes.text());
-            } else {
-              console.log('Successfully forwarded feedback to Discord!');
-            }
-          } catch (discordError) {
-            console.error('Failed to send to Discord webhook:', discordError);
-          }
-        } else {
-          console.log('No DISCORD_WEBHOOK_URL environment variable configured. Feedback saved locally only.');
-          return res.json({ status: 'ok', warning: 'DISCORD_WEBHOOK_URL not configured' });
-        }
-      }
-      res.json({ status: 'ok' });
-    } catch (e) {
-      console.error('Error saving feedback', e);
-      res.status(500).json({ error: 'Failed to save feedback' });
-    }
-  });
   
   const genWorkerFileNode = path.join(process.cwd(), 'dist/src/server/GenWorker.cjs');
   const fallbackTs = path.join(process.cwd(), 'src/server/GenWorker.ts');
@@ -310,17 +265,17 @@ async function startServer() {
       }
     };
     
-    const playerLimit = baseName === 'dungeondelver' ? 30 : 50;
+    const playerLimit = baseName === 'summerlab' ? 30 : 50;
     instances.push({ id: newId, name: baseName, playerLimit, worker, api });
     console.log(`Provisioned new server child instance: ${newId}`);
     return newId;
   }
 
   // Pre-warm the instances
-  getOrProvisionServer('dungeondelver');
+  getOrProvisionServer('summerlab');
 
   app.get('/api/matchmake', (req, res) => {
-    let mode = 'dungeondelver'; // Lock to dungeondelver
+    let mode = 'summerlab'; // Lock to summerlab
     let serverId = getOrProvisionServer(mode);
     
     res.json({ serverId: serverId.replace('/', '') });

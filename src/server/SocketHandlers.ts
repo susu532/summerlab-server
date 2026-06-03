@@ -81,15 +81,13 @@ ctx.ioNamespace.on("connection", (socket) => {
 
     // Handle player join
     socket.on("join", (data) => {
-      if (worldName.startsWith("dungeondelver") || worldName.startsWith("skycastles")) {
-          const expectedMax = 30;
-          if (Object.keys(players).length >= expectedMax) {
-              const botIds = Object.keys(players).filter(id => players[id].isBot);
-              if (botIds.length > 0) {
-                  const botToRemove = botIds[0];
-                  ioNamespace.emit("playerLeft", botToRemove);
-                  delete players[botToRemove];
-              }
+      // If it's dungeon delver, remove a bot to make room for human
+      if (worldName.startsWith("dungeondelver")) {
+          const botIds = Object.keys(players).filter(id => players[id].isBot);
+          if (botIds.length > 0) {
+              const botToRemove = botIds[0];
+              ioNamespace.emit("playerLeft", botToRemove);
+              delete players[botToRemove];
           }
       }
 
@@ -132,6 +130,10 @@ ctx.ioNamespace.on("connection", (socket) => {
         team,
         yaw: respawnData.yaw,
       });
+
+      if (ctx.globalSplats.size > 0) {
+        socket.emit("splats", Array.from(ctx.globalSplats.values()));
+      }
 
       const rawName = String(data.name || "Unknown Player").slice(0, 20);
       const _moderation = chatModerator.moderateMessage(socket.id, rawName, {
@@ -200,6 +202,50 @@ ctx.ioNamespace.on("connection", (socket) => {
           progress: data.progress,
         });
       }
+    });
+
+    // Handle splats
+    socket.on("splats", (data: any[]) => {
+       if (!data || !Array.isArray(data)) return;
+       const toBroadcast = [];
+       for (const splat of data) {
+         if (Array.isArray(splat) && splat.length === 7) {
+            // [x, y, z, nx, ny, nz, colorHex]
+            const px = Math.floor(splat[0] * 5);
+            const py = Math.floor(splat[1] * 5);
+            const pz = Math.floor(splat[2] * 5);
+            const gridKey = `${px},${py},${pz}`;
+            
+            // Limit map size
+            if (!ctx.globalSplats.has(gridKey) && ctx.globalSplats.size > 80000) {
+               // Remove random
+               const iterator = ctx.globalSplats.keys();
+               ctx.globalSplats.delete(iterator.next().value!);
+            }
+            ctx.globalSplats.set(gridKey, splat);
+            toBroadcast.push(splat);
+         }
+       }
+       if (toBroadcast.length > 0) {
+         ctx.pendingSplats.push(...toBroadcast);
+         // Immediately relay to others using volatile if we want, or batch in tick.
+         // Let's rely on tick for batching if many players, but immediate broadcast is easier.
+         socket.broadcast.emit("splats", toBroadcast);
+       }
+    });
+
+    socket.on("cleanSplats", (keys: string[]) => {
+       if (!keys || !Array.isArray(keys)) return;
+       const toBroadcast = [];
+       for (const k of keys) {
+         if (ctx.globalSplats.has(k)) {
+            ctx.globalSplats.delete(k);
+            toBroadcast.push(k);
+         }
+       }
+       if (toBroadcast.length > 0) {
+          socket.broadcast.emit("cleanSplats", toBroadcast);
+       }
     });
 
     // Handle player hit
@@ -668,6 +714,8 @@ const floats = getFloat32Array(buf);
       if (p.isSwinging !== state.isSwinging) { p.isSwinging = state.isSwinging; changed = true; }
       if (p.isGliding !== state.isGliding) { p.isGliding = state.isGliding; changed = true; }
       if (p.isBlocking !== state.isBlocking) { p.isBlocking = state.isBlocking; changed = true; }
+      if (p.isShooting !== state.isShooting) { p.isShooting = state.isShooting; changed = true; }
+      if (p.fluidColor !== state.fluidColor) { p.fluidColor = state.fluidColor; changed = true; }
       if (p.swingSpeed !== state.swingSpeed) { p.swingSpeed = state.swingSpeed; changed = true; }
       if (p.isGrounded !== state.isGrounded) { p.isGrounded = state.isGrounded; changed = true; }
       if (p.heldItem !== state.heldItem) { p.heldItem = state.heldItem; changed = true; }
