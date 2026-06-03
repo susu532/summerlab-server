@@ -18,7 +18,7 @@ function isOriginAllowed(origin: string | undefined): boolean {
     return false;
 }
 
-const VALID_MODES = new Set(['hub', 'skybridge', 'skycastles', 'voidtrail', 'dungeondelver', 'battleroyale','skyisland']);
+const VALID_MODES = new Set(['hub', 'skybridge', 'skycastles', 'voidtrail', 'dungeondelver', 'battleroyale','skyisland','summerlab']);
 
 async function startServer() {
   const app = express();
