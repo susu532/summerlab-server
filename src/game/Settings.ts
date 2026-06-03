@@ -16,6 +16,7 @@ export interface Keybinds {
   fly: string;
   toggleHUD: string;
   leaderboard: string;
+  openFluidColorPicker: string;
   feedback: string;
   slot1: string;
   slot2: string;
@@ -40,6 +41,7 @@ export interface GameSettings {
   premiumShaders: boolean;
   hideShininess: boolean;
   language: string;
+  serverRegion: string;
   keybinds: Keybinds;
 }
 
@@ -58,6 +60,7 @@ export const DEFAULT_KEYBINDS: Keybinds = {
   fly: 'KeyP',
   toggleHUD: 'KeyN',
   leaderboard: 'Tab',
+  openFluidColorPicker: 'KeyF',
   feedback: 'KeyG',
   slot1: 'Digit1',
   slot2: 'Digit2',
@@ -82,6 +85,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   premiumShaders: false,
   hideShininess: true,
   language: 'en',
+  serverRegion: 'auto',
   keybinds: { ...DEFAULT_KEYBINDS },
 };
 
