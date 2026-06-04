@@ -721,6 +721,12 @@ const floats = getFloat32Array(buf);
       if (p.heldItem !== state.heldItem) { p.heldItem = state.heldItem; changed = true; }
       if (p.offHandItem !== state.offHandItem) { p.offHandItem = state.offHandItem; changed = true; }
       if (p.defense !== state.defense) { p.defense = state.defense; changed = true; }
+      if (p.currentEmoji !== state.currentEmoji) {
+        p.currentEmoji = state.currentEmoji;
+        changed = true;
+        // Broadcast the emoji change to everyone immediately via playerJoined
+        ioNamespace.emit("playerJoined", p);
+      }
       if (state.maxHealth !== undefined && p.maxHealth !== state.maxHealth) {
         p.maxHealth = state.maxHealth;
         changed = true;
