@@ -9,7 +9,7 @@ import { WebSocketServer } from 'ws';
 
 import Piscina from 'piscina';
 
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['https://starplex-io.vercel.app'];
+const ALLOWED_ORIGIN = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['https://summerlab.vercel.app'];
 
 function isOriginAllowed(origin: string | undefined): boolean {
     if (!origin) return true;
