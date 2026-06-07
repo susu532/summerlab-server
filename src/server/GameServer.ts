@@ -657,6 +657,29 @@ const ctx: import("./GameContext").GameContext = {
     }
   }
 
+  if (worldName.startsWith("summerlab") && worldName.endsWith("_1")) {
+    const id = "bot_" + Math.random().toString(36).substring(2, 9);
+    let respawnData = mode.getRespawnPosition(id, {}, chunkManager, bakedBlocks);
+    players[id] = {
+      id,
+      isBot: true,
+      position: { x: respawnData.x, y: respawnData.y, z: respawnData.z },
+      velocity: { x: 0, y: 0, z: 0 },
+      rotation: respawnData.yaw !== undefined ? { x: 0, y: respawnData.yaw, z: 0 } : { x: 0, y: 0, z: 0 },
+      skinSeed: "cool_kid_123",
+      name: "ChocolateMan",
+      health: 100,
+      maxHealth: 100,
+      defense: 0,
+      team: undefined,
+      isDead: false,
+      heldItem: 521, // FLUID_CHOCOLATE_HOSE
+      offHandItem: 0,
+      joinTime: Date.now(),
+      lastRespawnTime: Date.now()
+    };
+  }
+
   // (Despawn loops moved to unified 10s background task)
 
   // Mob Spawning ticks - wait, that's done with setTimeout.

@@ -253,14 +253,13 @@ export function tick(ctx: GameContext, delta: number) {
     }
 
     // BOT SIMULATION
-    if (hasHumanPlayers && (mode.name.startsWith('/dungeondelver') || mode.name.startsWith('/skycastles'))) {
+    if (hasHumanPlayers) {
       for (const id in players) {
         const p = players[id];
         if (p && p.isBot) {
-          if (p.isSpectator) {
-            continue;
-          }
+          if (p.isSpectator) continue;
           if (!p.velocity) p.velocity = {x: 0, y: 0, z: 0};
+          let target: any = null;
           if (p.isDead) {
             // Respawn after ~3 seconds
             if (now - (p.lastDamageTime || 0) > 3000) {
@@ -336,9 +335,11 @@ export function tick(ctx: GameContext, delta: number) {
           // Initialize velocity if missing
           if (!p.velocity) p.velocity = { x: 0, y: 0, z: 0 };
           
-          // Find closest target (mob or player not on same team)
-          const botOffset = (p.id.charCodeAt(0) || 0) + (p.id.charCodeAt(1) || 0);
-          if ((localBotTickCounter + botOffset) % 15 === 0) {
+          // --- AI Logic (only for dungeondelver/skycastles) ---
+          if (mode.name.startsWith('/dungeondelver') || mode.name.startsWith('/skycastles')) {
+            // Find closest target (mob or player not on same team)
+            const botOffset = (p.id.charCodeAt(0) || 0) + (p.id.charCodeAt(1) || 0);
+            if ((localBotTickCounter + botOffset) % 15 === 0) {
             let closestDist = 1500;
             let closestItem: any = null;
             let closestType: string | null = null;
@@ -398,7 +399,6 @@ export function tick(ctx: GameContext, delta: number) {
             }
           }
 
-          let target: any = null;
           if ((p as any).targetItem) {
             target = (p as any).targetType === 'player' ? players[(p as any).targetItem] : mobs[(p as any).targetItem];
             // Only re-check Line of Sight/Lava occasionally to save CPU, e.g. every 15 ticks
@@ -414,6 +414,7 @@ export function tick(ctx: GameContext, delta: number) {
               }
             }
           }
+          } // End of outer AI start block
           
           // Apply gravity
           const bx = Math.floor(p.position.x);
@@ -461,6 +462,7 @@ export function tick(ctx: GameContext, delta: number) {
             }
           }
 
+          if (mode.name.startsWith('/dungeondelver') || mode.name.startsWith('/skycastles')) {
           if (target && target.position) {
             const dx = target.position.x - p.position.x;
             const dz = target.position.z - p.position.z;
@@ -607,6 +609,7 @@ export function tick(ctx: GameContext, delta: number) {
                 p.velocity.z -= Math.cos(p.rotation.y) * 1.0;
              }
           }
+          } // End of AI behavior block
           
           // Dynamic Steering Override: Prevent bots from running or falling onto/above lava
           const isKnockedBack = now - (p.lastDamageTime || 0) < 1000;
