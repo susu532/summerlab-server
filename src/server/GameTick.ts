@@ -520,7 +520,7 @@ export function tick(ctx: GameContext, delta: number) {
                       });
                    } else {
                       // is player
-                      const isInvulnerable = !mode.name.startsWith('/dungeondelver') && now - (target.lastRespawnTime || 0) < 5000;
+                      const isInvulnerable = !mode.name.startsWith('/dungeondelver') && now - (target.lastRespawnTime || 0) < (target.isBot ? 0 : 1500);
                        if (!isInvulnerable) {
                       const targetDefense = target.defense || 0;
                       const reduction = targetDefense / (targetDefense + 100);
@@ -565,11 +565,14 @@ export function tick(ctx: GameContext, delta: number) {
                           broadcastToNearby("playerDied", { id: target.id }, target.position.x, target.position.z, 22500, null);
                         }
                       } else {
-                        const force = Math.max(8.0, Math.sqrt(knockbackDir.x * knockbackDir.x + (knockbackDir.y || 0) * (knockbackDir.y || 0) + knockbackDir.z * knockbackDir.z));
-                        const yLift = Math.min(8.0, 5.5 + (force - 8.0) * 0.5);
-                        target.velocity.x = knockbackDir.x;
-                        target.velocity.z = knockbackDir.z;
-                        target.velocity.y = target.isBot ? yLift : (target.velocity.y || 0) + 0.3;
+                        if (target.isBot) {
+                          if (!target.knockbackVelocity) target.knockbackVelocity = { x: 0, y: 0, z: 0 };
+                          target.knockbackVelocity.x = knockbackDir.x;
+                          target.knockbackVelocity.z = knockbackDir.z;
+                          target.velocity.y = (target.velocity.y || 0) + 2.2;
+                        } else {
+                          target.velocity.y = (target.velocity.y || 0) + 0.3;
+                        }
                       }
                       pendingPlayerUpdates.add(target.id); // Sync health
                       pendingHits.push({ 
@@ -637,20 +640,32 @@ export function tick(ctx: GameContext, delta: number) {
           p.velocity.z *= friction;
           
           const dt = 0.05;
+          let moveX = p.velocity.x * dt;
+          let moveZ = p.velocity.z * dt;
           
-          if (Math.abs(p.velocity.x) > 0.001) p.position.x += p.velocity.x * dt;
+          if (p.knockbackVelocity) {
+            const kbDecay = 1.0 - Math.pow(0.01, dt);
+            p.knockbackVelocity.x = p.knockbackVelocity.x * Math.pow(0.01, dt);
+            p.knockbackVelocity.z = p.knockbackVelocity.z * Math.pow(0.01, dt);
+            moveX += p.knockbackVelocity.x * dt;
+            moveZ += p.knockbackVelocity.z * dt;
+          }
+          
+          if (Math.abs(moveX) > 0.001) p.position.x += moveX;
           if (isSolidBlock(getBlockAt(Math.floor(p.position.x), Math.floor(p.position.y), Math.floor(p.position.z)))) {
-             p.position.x -= p.velocity.x * dt;
+             p.position.x -= moveX;
              p.velocity.x = 0;
+             if (p.knockbackVelocity) p.knockbackVelocity.x = 0;
              (p as any).roamTimer = 0;
           }
 
           if (Math.abs(p.velocity.y) > 0.001) p.position.y += p.velocity.y * dt;
 
-          if (Math.abs(p.velocity.z) > 0.001) p.position.z += p.velocity.z * dt;
+          if (Math.abs(moveZ) > 0.001) p.position.z += moveZ;
           if (isSolidBlock(getBlockAt(Math.floor(p.position.x), Math.floor(p.position.y), Math.floor(p.position.z)))) {
-             p.position.z -= p.velocity.z * dt;
+             p.position.z -= moveZ;
              p.velocity.z = 0;
+             if (p.knockbackVelocity) p.knockbackVelocity.z = 0;
              (p as any).roamTimer = 0;
           }
 
@@ -681,7 +696,7 @@ export function tick(ctx: GameContext, delta: number) {
           if (p.isGrounded) stateMask |= 32;
           if (p.isBlocking) stateMask |= 64;
           if (p.isGliding) stateMask |= 128;
-          if (!mode.name.startsWith('/dungeondelver') && Date.now() - (p.lastRespawnTime || 0) < 5000) stateMask |= 256;
+          if (!mode.name.startsWith('/dungeondelver') && Date.now() - (p.lastRespawnTime || 0) < (p.isBot ? 0 : 1500)) stateMask |= 256;
           if (p.isShooting) stateMask |= 512;
 
           if (!p.packedData) p.packedData = new Float32Array(12);

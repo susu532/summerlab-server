@@ -257,8 +257,8 @@ ctx.ioNamespace.on("connection", (socket) => {
       if (id !== socket.id) return;
 
       if (players[id]) {
-        // Invulnerability for 5 seconds after respawn (unless dungeon delver)
-        if (!mode.name.startsWith("/dungeondelver") && Date.now() - (players[id].lastRespawnTime || 0) < 5000) return;
+        const isInvulnerable = !mode.name.startsWith("/dungeondelver") && Date.now() - (players[id].lastRespawnTime || 0) < (players[id].isBot ? 0 : 1500);
+        if (isInvulnerable) return;
 
         players[id].health -= damage;
         players[id].lastDamageTime = Date.now();
@@ -477,8 +477,8 @@ ctx.ioNamespace.on("connection", (socket) => {
       } else {
         const target = players[targetId];
         if (target) {
-          // Invulnerability for 5 seconds after respawn (unless dungeon delver)
-          if (!mode.name.startsWith("/dungeondelver") && Date.now() - (target.lastRespawnTime || 0) < 5000) return;
+          const isInvulnerable = !mode.name.startsWith("/dungeondelver") && Date.now() - (target.lastRespawnTime || 0) < (target.isBot ? 0 : 1500);
+          if (isInvulnerable) return;
 
           if (attacker.team && target.team && attacker.team === target.team)
             return;
@@ -500,6 +500,15 @@ ctx.ioNamespace.on("connection", (socket) => {
           if (actualDamage > 0) {
             target.lastDamageTime = Date.now();
             pendingPlayerUpdates.add(targetId);
+            
+            if (target.isBot) {
+              if (!target.velocity) target.velocity = { x: 0, y: 0, z: 0 };
+              if (!target.knockbackVelocity) target.knockbackVelocity = { x: 0, y: 0, z: 0 };
+              
+              target.knockbackVelocity.x = serverKnockbackDir.x;
+              target.knockbackVelocity.z = serverKnockbackDir.z;
+              target.velocity.y = (target.velocity.y || 0) + 2.2;
+            }
           }
           if (target.health < 0) target.health = 0;
           if (target.health === 0 && !target.isDead) {
