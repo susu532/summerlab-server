@@ -213,6 +213,11 @@ export function createGameServer(io: any, db: any, mode: GameModeInfo, genWorker
       return true;
     }
 
+    // Disable building at spawn (5 block radius)
+    if (absX <= 5 && absZ <= 5) {
+      return true;
+    }
+
     // Do not force load the chunk synchronously. Active regions are already loaded.
     let currentBlock = chunkManager.getBlockFromChunk(cx, cz, lx, ly, lz);
 
@@ -578,6 +583,28 @@ const ctx: import("./GameContext").GameContext = {
         const lz = ((z % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
         const ly = Math.floor(y) - WORLD_Y_OFFSET;
         chunkManager.setBlockInChunk(cx, cz, lx, ly, lz, type);
+        
+        if (type === 0) {
+          const removedKeys: string[] = [];
+          const bx = Math.floor(x);
+          const by = Math.floor(y);
+          const bz = Math.floor(z);
+          for (let sx = bx * 5 - 1; sx <= bx * 5 + 5; sx++) {
+            for (let sy = by * 5 - 1; sy <= by * 5 + 5; sy++) {
+              for (let sz = bz * 5 - 1; sz <= bz * 5 + 5; sz++) {
+                const k = `${sx},${sy},${sz}`;
+                if (globalSplats.has(k)) {
+                  globalSplats.delete(k);
+                  removedKeys.push(k);
+                }
+              }
+            }
+          }
+          if (removedKeys.length > 0) {
+            ioNamespace.emit("cleanSplats", removedKeys);
+          }
+        }
+
         ioNamespace.emit("blockChanged", { x, y, z, type });
       },
       spawnMob: (

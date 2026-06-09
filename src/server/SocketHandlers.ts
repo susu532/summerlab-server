@@ -736,6 +736,12 @@ const floats = getFloat32Array(buf);
         // Broadcast the emoji change to everyone immediately via playerJoined
         ioNamespace.emit("playerJoined", p);
       }
+      if (p.currentEmote !== state.currentEmote) {
+        p.currentEmote = state.currentEmote;
+        changed = true;
+        // Broadcast the emote change to everyone immediately via playerJoined
+        ioNamespace.emit("playerJoined", p);
+      }
       if (state.maxHealth !== undefined && p.maxHealth !== state.maxHealth) {
         p.maxHealth = state.maxHealth;
         changed = true;
@@ -787,6 +793,29 @@ const floats = getFloat32Array(buf);
       const ly = y - WORLD_Y_OFFSET;
       chunkManager.setBlockInChunk(cx, cz, lx, ly, lz, type);
       chunkManager.markChunkDirty(x, z);
+
+      if (type === 0) {
+        const removedKeys: string[] = [];
+        const bx = Math.floor(x);
+        const by = Math.floor(y);
+        const bz = Math.floor(z);
+        // splat keys are px,py,pz where px = Math.floor(splat[0] * 5)
+        // A block from bx to bx+1 covers coordinates slightly outside the boundary
+        for (let sx = bx * 5 - 1; sx <= bx * 5 + 5; sx++) {
+          for (let sy = by * 5 - 1; sy <= by * 5 + 5; sy++) {
+            for (let sz = bz * 5 - 1; sz <= bz * 5 + 5; sz++) {
+              const k = `${sx},${sy},${sz}`;
+              if (ctx.globalSplats.has(k)) {
+                ctx.globalSplats.delete(k);
+                removedKeys.push(k);
+              }
+            }
+          }
+        }
+        if (removedKeys.length > 0) {
+          ioNamespace.emit("cleanSplats", removedKeys);
+        }
+      }
 
       // Queue block update
       pendingBlockUpdates.push({
