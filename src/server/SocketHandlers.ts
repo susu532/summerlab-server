@@ -44,6 +44,7 @@ ctx.ioNamespace.on("connection", (socket) => {
       dayTime: state.dayTime,
       gameStartTime: state.gameStartTime, // added
       npcs,
+      isWaterPark: worldName === "summerlab" ? (mode as any).currentPhase : undefined,
     });
     
     if (state.lastSkyCastlesSyncJSON) {

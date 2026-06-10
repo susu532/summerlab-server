@@ -77,6 +77,19 @@ export class SummerLabMode implements GameModeInfo {
          ctx.chunkManager.resetWorld();
          ctx.globalSplats.clear();
          
+         // Clear dropped items to prevent them from getting stuck
+         for (const itemId in ctx.droppedItems) {
+             ctx.ioNamespace.emit("itemDespawned", itemId);
+             delete ctx.droppedItems[itemId];
+         }
+         
+         // Clear mobs
+         for (const mobId in ctx.mobs) {
+             ctx.ioNamespace.emit("mobDespawned", mobId);
+             ctx.releaseMobToPool(ctx.mobs[mobId]);
+             delete ctx.mobs[mobId];
+         }
+         
          this.generateSplats(ctx);
          
          // Notify players
@@ -90,13 +103,14 @@ export class SummerLabMode implements GameModeInfo {
          // Tell clients to clear their chunks and re-request.
          ctx.ioNamespace.emit("forceReloadMap", { isWaterPark: phase });
          
-         // Reposition bots
+         // Reposition everyone
          const respawn = this.getRespawnPosition("system");
          for (const id in ctx.players) {
              const p = ctx.players[id];
-             if (p.isBot) {
-               p.position = { x: respawn.x, y: respawn.y, z: respawn.z };
-               p.velocity = { x: 0, y: 0, z: 0 };
+             p.position = { x: respawn.x, y: respawn.y, z: respawn.z };
+             p.velocity = { x: 0, y: 0, z: 0 };
+             if (!p.isBot) {
+               ctx.ioNamespace.to(id).emit("playerRespawn", { id, position: p.position });
              }
          }
      }
@@ -150,6 +164,6 @@ export class SummerLabMode implements GameModeInfo {
       return { x: 0, y: 6, z: 35, yaw: 0 };
     }
     // Summer Lab Classic mode -> spawn in the courtyard outside the keep at z=25, ground is at y=0
-    return { x: 0, y: 6, z: 0, yaw: 0 };
+    return { x: 0, y: 6, z: 25, yaw: 0 };
   }
 }
