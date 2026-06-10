@@ -234,20 +234,52 @@ export function tick(ctx: GameContext, delta: number) {
       cell.push(p);
     }
 
-    // Health Regeneration
+    // Health Regeneration & Stuck Damage
     let numPlayersRegen = 0;
     for (const id in players) {
       const p = players[id];
       if (p && p.isBot && !hasHumanPlayers) continue; // Skip bots when no humans are present
-      if (p && !p.isDead && p.health < (p.maxHealth || 100)) {
-        if (now - (p.lastDamageTime || 0) >= 20000) {
-          const healthRegen = ((p.maxHealth || 100) * 0.01 + 1) * delta;
-          const oldHealthInt = Math.floor(p.health);
-          p.health = Math.min(p.maxHealth || 100, p.health + healthRegen);
-          if (Math.floor(p.health) !== oldHealthInt) {
-            pendingPlayerUpdates.add(id); // Send updated health to clients sparingly
+      if (p && !p.isDead) {
+
+        // Stuck damage (take damage when culling/tunneled inside a block)
+        const px = Math.floor(p.position.x);
+        const py = Math.floor(p.position.y + 0.1); // Small offset so walking on floor doesn't trigger feet
+        const pz = Math.floor(p.position.z);
+        const blockAtFeet = fastGetBlock(px, py, pz);
+        const blockAtHead = fastGetBlock(px, py + 1, pz);
+        
+        const isStuck = isSolidBlock(blockAtFeet) || isSolidBlock(blockAtHead);
+        
+        if (isStuck) {
+          // 20 damage per second
+          const damage = 20 * delta;
+          p.health -= damage;
+          p.lastDamageTime = now;
+          if (p.health <= 0) {
+            p.health = 0;
+            p.isDead = true;
+            p.deaths = (p.deaths || 0) + 1;
+            ioNamespace.emit("playerStatsUpdate", { 
+              id: p.id,
+              kills: p.kills || 0,
+              deaths: p.deaths,
+              health: p.health
+            });
+            ioNamespace.emit("playerKilled", { victimId: p.id });
+          } else if (Math.random() < 0.2) { 
+            // 20% of ticks = 4 updates per sec roughly, to save bandwidth
+            pendingPlayerUpdates.add(id); 
           }
-          numPlayersRegen++;
+        } else if (p.health < (p.maxHealth || 100)) {
+          if (now - (p.lastDamageTime || 0) >= 20000) {
+            const healthRegen = ((p.maxHealth || 100) * 0.01 + 1) * delta;
+            const oldHealthInt = Math.floor(p.health);
+            p.health = Math.min(p.maxHealth || 100, p.health + healthRegen);
+            if (Math.floor(p.health) !== oldHealthInt) {
+              pendingPlayerUpdates.add(id); // Send updated health to clients sparingly
+            }
+            numPlayersRegen++;
+          }
         }
       }
     }
@@ -426,7 +458,35 @@ export function tick(ctx: GameContext, delta: number) {
           
           if (!onGround) {
             p.velocity.y -= 1.0; // gravity
+            if (!(p as any).highestY) (p as any).highestY = p.position.y;
+            if (p.position.y > (p as any).highestY) (p as any).highestY = p.position.y;
           } else if (p.velocity.y <= 0) {
+            
+            // Fall damage
+            if ((p as any).highestY !== undefined) {
+               const fallDistance = (p as any).highestY - p.position.y;
+               if (fallDistance > 4) {
+                  const damage = Math.floor(fallDistance - 4) * 5;
+                  if (damage > 0) {
+                      p.health -= damage;
+                      pendingPlayerUpdates.add(id);
+                      if (p.health <= 0) {
+                          p.health = 0; // kill bot
+                          p.isDead = true;
+                          p.lastDamageTime = now;
+                          p.deaths = (p.deaths || 0) + 1;
+                          ioNamespace.emit("playerStatsUpdate", { 
+                            id: p.id,
+                            kills: p.kills || 0,
+                            deaths: p.deaths
+                          });
+                          ioNamespace.emit("playerKilled", { victimId: p.id });
+                      }
+                  }
+               }
+               (p as any).highestY = undefined;
+            }
+
             p.velocity.y = 0;
             p.position.y = by + 1; // stand on ground
             

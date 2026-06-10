@@ -13,7 +13,7 @@ import {
   noise3D,
 } from "../game/TerrainGenerator";
 
-import { BLOCK, isSolidBlock, CHUNK_SIZE, WORLD_Y_OFFSET } from "./constants";
+import { BLOCK, isSolidBlock, CHUNK_SIZE, WORLD_Y_OFFSET, isWaterBlock } from "./constants";
 import { MobTypes, calculateMobMaxHealth } from "../game/Constants";
 import { tickItemDespawn, tickMobDespawn } from "./Systems";
 import itemsData from "../../data/items.json";
@@ -336,65 +336,6 @@ const ctx: import("./GameContext").GameContext = {
   
   setupSocketHandlers(ctx);
   
-  if (worldName.includes("summerlab")) {
-    const isSolid = (x: number, y: number, z: number) => {
-        return !!mode.getBlockAt(x, y, z, chunkManager, bakedBlocks) || (y <= 0 && y >= -10 && (x*x + z*z <= (80+y)*(80+y)));
-    };
-
-    const normals = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
-    let splatGenCount = 0;
-
-    for (let y = 30; y >= 0; y--) {
-        for (let x = -40; x <= 40; x++) {
-            for (let z = -40; z <= 40; z++) {
-                if (splatGenCount >= 80000) break;
-                
-                if (isSolid(x, y, z)) {
-                    for (const n of normals) {
-                        const nx = x + n[0];
-                        const ny = y + n[1];
-                        const nz = z + n[2];
-                        if (ny >= 0 && !isSolid(nx, ny, nz)) {
-                            if (splatGenCount >= 80000) break;
-
-                            let uAxis = [0, 1, 0];
-                            let vAxis = [0, 0, 1];
-                            if (Math.abs(n[1]) > 0) {
-                                uAxis = [1, 0, 0];
-                                vAxis = [0, 0, 1];
-                            } else if (Math.abs(n[2]) > 0) {
-                                uAxis = [1, 0, 0];
-                                vAxis = [0, 1, 0];
-                            }
-
-                            for (let u = -0.25; u <= 0.25; u += 0.5) {
-                                for (let v = -0.25; v <= 0.25; v += 0.5) {
-                                    if (splatGenCount >= 80000) break;
-                                    let rx = x + 0.5 + n[0] * 0.51 + uAxis[0] * u + vAxis[0] * v;
-                                    let ry = y + 0.5 + n[1] * 0.51 + uAxis[1] * u + vAxis[1] * v;
-                                    let rz = z + 0.5 + n[2] * 0.51 + uAxis[2] * u + vAxis[2] * v;
-                                    
-                                    const splat = [rx, ry, rz, n[0], n[1], n[2], 0x3d1c04];
-                                    const px = Math.floor(splat[0] * 10);
-                                    const py = Math.floor(splat[1] * 10);
-                                    const pz = Math.floor(splat[2] * 10);
-                                    const key = `${px},${py},${pz}`;
-                                    if (!globalSplats.has(key)) {
-                                        globalSplats.set(key, splat);
-                                        splatGenCount++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (splatGenCount >= 80000) break;
-        }
-        if (splatGenCount >= 80000) break;
-    }
-  }
-
   // Game Reset / End Game state
    // "playing" | "endgame"
   
@@ -425,11 +366,85 @@ const ctx: import("./GameContext").GameContext = {
     // Clear chunks
     chunkManager.resetWorld();
 
+    globalSplats.clear();
+    pendingSplats.length = 0;
+    pendingCleanSplats.length = 0;
+
     if (mode.onResetRoom) {
       mode.onResetRoom(ctx);
     }
 
+    const isSolid = (x: number, y: number, z: number) => {
+        const type = mode.getBlockAt(x, y, z, chunkManager, bakedBlocks);
+        return !!type && !isWaterBlock(type); // Ignore AIR and WATER
+    };
+    
+    let splatGenCount = 0;
+    const normals = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
+    const possibleColors = [0x3d1c04, 0x8b4513, 0xa0522d, 0xcd853f, 0xd2691e, 0xffa500, 0xff8c00];
+
+    for (let attempts = 0; attempts < 50000 && splatGenCount < 1000; attempts++) {
+        const x = Math.floor(Math.random() * 128) - 64;
+        const z = Math.floor(Math.random() * 128) - 64;
+        const y = Math.floor(Math.random() * 40);
+        
+        if (isSolid(x, y, z)) {
+            const n = normals[Math.floor(Math.random() * normals.length)];
+            const nx = x + n[0];
+            const ny = y + n[1];
+            const nz = z + n[2];
+            
+            const neighborBlock = mode.getBlockAt(nx, ny, nz, chunkManager, bakedBlocks);
+            
+            if (ny >= 0 && (!neighborBlock || neighborBlock === 0)) {
+                let uAxis = [0, 1, 0];
+                let vAxis = [0, 0, 1];
+                if (Math.abs(n[1]) > 0) {
+                    uAxis = [1, 0, 0];
+                    vAxis = [0, 0, 1];
+                } else if (Math.abs(n[2]) > 0) {
+                    uAxis = [1, 0, 0];
+                    vAxis = [0, 1, 0];
+                }
+                
+                const col = possibleColors[Math.floor(Math.random() * possibleColors.length)];
+                
+                // Pick a center point on the face for the cluster
+                const centerU = (Math.random() - 0.5) * 0.7;
+                const centerV = (Math.random() - 0.5) * 0.7;
+                
+                const clusterCount = 5 + Math.floor(Math.random() * 5);
+                for (let i = 0; i < clusterCount; i++) {
+                    if (splatGenCount >= 1000) break;
+                    
+                    // Offset from center, but clamped to face boundaries [-0.5, 0.5]
+                    let u = centerU + (Math.random() - 0.5) * 0.5;
+                    let v = centerV + (Math.random() - 0.5) * 0.5;
+                    
+                    u = Math.max(-0.5, Math.min(0.5, u));
+                    v = Math.max(-0.5, Math.min(0.5, v));
+                    
+                    let rx = x + 0.5 + n[0] * 0.51 + uAxis[0] * u + vAxis[0] * v;
+                    let ry = y + 0.5 + n[1] * 0.51 + uAxis[1] * u + vAxis[1] * v;
+                    let rz = z + 0.5 + n[2] * 0.51 + uAxis[2] * u + vAxis[2] * v;
+                    
+                    const splat = [rx, ry, rz, n[0], n[1], n[2], col];
+                    const px = Math.floor(splat[0] * 5);
+                    const py = Math.floor(splat[1] * 5);
+                    const pz = Math.floor(splat[2] * 5);
+                    const key = `${px},${py},${pz}`;
+                    
+                    if (!globalSplats.has(key)) {
+                        globalSplats.set(key, splat);
+                        splatGenCount++;
+                    }
+                }
+            }
+        }
+    }
+
     ioNamespace.emit("entitiesReset", { mobs, droppedItems, gameStartTime: state.gameStartTime });
+    ioNamespace.emit("splats", Array.from(globalSplats.values()));
 
     // Re-initialize players
     const oldBlue: string[] = [];

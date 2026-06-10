@@ -50,6 +50,38 @@ ctx.ioNamespace.on("connection", (socket) => {
       socket.emit("skyCastlesSync", JSON.parse(state.lastSkyCastlesSyncJSON));
     }
 
+    socket.on("requestBulkChunkChanges", (data) => {
+      if (!data || !data.id || !Array.isArray(data.coords)) return;
+      const chunks = [];
+      for (const { cx, cz } of data.coords) {
+        if (cx === undefined || cz === undefined) continue;
+        const changes = chunkManager.getChunkChanges(cx, cz, false);
+        if (changes) {
+          let changedCount = 0;
+          const patches: number[] = [];
+          for (let i = 0; i < changes.length; i++) {
+            if (changes[i] !== 65535) {
+              changedCount++;
+              if (changedCount <= 15) {
+                patches.push(i, changes[i]);
+              }
+            }
+          }
+          if (changedCount > 0 && changedCount <= 15) {
+            chunks.push({ cx, cz, patch: patches });
+          } else if (changedCount > 0) {
+            const compressed = encodeRLE(changes);
+            chunks.push({ cx, cz, data: Array.from(compressed) });
+          } else {
+            chunks.push({ cx, cz, data: null });
+          }
+        } else {
+          chunks.push({ cx, cz, data: null });
+        }
+      }
+      socket.emit("bulkChunkData", { id: data.id, chunks });
+    });
+
     socket.on("requestChunkChanges", (data) => {
       if (!data || data.cx === undefined || data.cz === undefined) return;
       const { cx, cz } = data;

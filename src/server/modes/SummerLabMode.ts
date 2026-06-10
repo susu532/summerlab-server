@@ -1,16 +1,105 @@
 import { GameModeInfo } from "./GameMode";
-import { BLOCK, CHUNK_SIZE, WORLD_Y_OFFSET } from "../constants";
+import { BLOCK, CHUNK_SIZE, WORLD_Y_OFFSET, isWaterBlock } from "../constants";
 import { ChunkManager } from "../ChunkManager";
-import { getSummerLabBlock } from "../../game/generation/SummerLabGenerator";
+import { getSummerLabBlock, isWaterParkPhase } from "../../game/generation/SummerLabGenerator";
+import { GameContext } from "../GameContext";
+import { ItemType } from "../../game/Inventory";
 
 export class SummerLabMode implements GameModeInfo {
   name: string;
   allowPvP = true;
   allowMobSpawns = false;
   allowPlayerMobSpawns = false;
+  currentPhase: boolean = false;
+  initialized: boolean = false;
 
   constructor(name: string) {
     this.name = name;
+    this.currentPhase = isWaterParkPhase(Date.now());
+  }
+
+   generateSplats(ctx: GameContext) {
+     const isWaterPark = this.currentPhase;
+     const splatColor = isWaterPark ? 0x00A8FF : 0x3d1c04; // Blue for water park, Chocolate for classic
+     let placed = 0;
+     
+     // 15000 randomized attempts to place up to 2000 splats
+     for (let i = 0; i < 15000 && placed < 2000; i++) {
+         const x = Math.floor(Math.random() * 128) - 64;
+         const z = Math.floor(Math.random() * 128) - 64;
+         
+         // Optimize raycast starting Y based on map layout
+         const ax = Math.abs(x);
+         const az = Math.abs(z);
+         let startY = 5; // Default for ground outside castle
+         if (ax <= 4 && az <= 4) startY = 85; 
+         else if (ax <= 20 && az <= 20) startY = 60; 
+         else if (Math.abs(ax - 35) <= 7 && Math.abs(az - 35) <= 7) startY = 50; 
+         else if (ax <= 40 && ax >= 20 && az <= 40) startY = 15; 
+         
+         if (isWaterPark) {
+             // Water park is generally much lower vertically
+             startY = 35;
+         }
+         
+         // Raycast downwards from the localized max height 
+         for (let y = startY; y >= -10; y--) {
+             const block = getSummerLabBlock(x, y, z);
+             if (block !== 0) {
+                 // Found surface
+                 if (!isWaterBlock(block) && block !== ItemType.AIR) {
+                     // Not water, we can place the splat
+                     const sx = x + (Math.random() - 0.5) * 0.8;
+                     const sz = z + (Math.random() - 0.5) * 0.8;
+                     const sy = y + 1.01;
+                     
+                     const splat = [sx, sy, sz, 0, 1, 0, splatColor];
+                     const key = Math.floor(sx * 5) + "," + Math.floor(sy * 5) + "," + Math.floor(sz * 5);
+                     ctx.globalSplats.set(key, splat);
+                     placed++;
+                 }
+                 break; // Hit a block, don't continue down
+             }
+         }
+     }
+  }
+
+  onTick(ctx: GameContext, delta: number, now: number) {
+     const phase = isWaterParkPhase(now);
+     
+     if (!this.initialized) {
+         this.initialized = true;
+         this.generateSplats(ctx);
+     }
+     
+     if (this.currentPhase !== phase) {
+         this.currentPhase = phase;
+         ctx.chunkManager.resetWorld();
+         ctx.globalSplats.clear();
+         
+         this.generateSplats(ctx);
+         
+         // Notify players
+         const modeName = phase ? "Water Park" : "Summer Lab Classic";
+         ctx.ioNamespace.emit("chatMessage", {
+             sender: "System",
+             message: `World updated! Now entering: ${modeName}!`,
+         });
+         
+         // In a voxel engine, chunks aren't auto-sent if they were already sent and cleared from server.
+         // Tell clients to clear their chunks and re-request.
+         ctx.ioNamespace.emit("forceReloadMap", { isWaterPark: phase });
+         
+         // Reposition bots
+         const respawn = this.getRespawnPosition("system");
+         for (const id in ctx.players) {
+             const p = ctx.players[id];
+             if (p.isBot) {
+               p.position = { x: respawn.x, y: respawn.y, z: respawn.z };
+               p.velocity = { x: 0, y: 0, z: 0 };
+             }
+         }
+     }
   }
 
   isIndestructible(
@@ -56,6 +145,11 @@ export class SummerLabMode implements GameModeInfo {
     chunkManager?: ChunkManager,
     bakedBlocks?: Map<string, number>,
   ): { x: number; y: number; z: number; yaw?: number } {
-    return { x: 0, y: 1, z: 0, yaw: 0 };
+    if (this.currentPhase) {
+         // Water Park mode -> spawn on the main walkway at z=35, perfectly flat ground, y=5 drops them gently to y=1
+      return { x: 0, y: 6, z: 35, yaw: 0 };
+    }
+    // Summer Lab Classic mode -> spawn in the courtyard outside the keep at z=25, ground is at y=0
+    return { x: 0, y: 6, z: 0, yaw: 0 };
   }
 }
