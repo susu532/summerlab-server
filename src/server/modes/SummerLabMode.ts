@@ -5,7 +5,7 @@ import { getSummerLabBlock } from "../../game/generation/SummerLabGenerator";
 import { getWaterParkBlock } from "../../game/generation/WaterParkGenerator";
 
 export function isWaterParkPhase(now: number = Date.now()): boolean {
-   return Math.floor(now / 1200000) % 2 === 1;
+   return Math.floor(now / 600000) % 2 === 1;
 }
 import { GameContext } from "../GameContext";
 import { ItemType } from "../../game/Inventory";
