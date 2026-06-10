@@ -1,7 +1,12 @@
 import { GameModeInfo } from "./GameMode";
 import { BLOCK, CHUNK_SIZE, WORLD_Y_OFFSET, isWaterBlock } from "../constants";
 import { ChunkManager } from "../ChunkManager";
-import { getSummerLabBlock, isWaterParkPhase } from "../../game/generation/SummerLabGenerator";
+import { getSummerLabBlock } from "../../game/generation/SummerLabGenerator";
+import { getWaterParkBlock } from "../../game/generation/WaterParkGenerator";
+
+export function isWaterParkPhase(now: number = Date.now()): boolean {
+   return Math.floor(now / 1200000) % 2 === 1;
+}
 import { GameContext } from "../GameContext";
 import { ItemType } from "../../game/Inventory";
 
@@ -44,7 +49,7 @@ export class SummerLabMode implements GameModeInfo {
          
          // Raycast downwards from the localized max height 
          for (let y = startY; y >= -10; y--) {
-             const block = getSummerLabBlock(x, y, z);
+             const block = isWaterPark ? getWaterParkBlock(x, y, z) : getSummerLabBlock(x, y, z);
              if (block !== 0) {
                  // Found surface
                  if (!isWaterBlock(block) && block !== ItemType.AIR) {
@@ -123,8 +128,19 @@ export class SummerLabMode implements GameModeInfo {
     bakedBlocks: Map<string, number>,
     currentBlock: number = 0,
   ): boolean {
+    const fx = Math.floor(x);
+    const fy = Math.floor(y);
+    const fz = Math.floor(z);
+
+    // 5x5 disallowed building zone at spawn positions
+    if (this.currentPhase) {
+      if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 35) <= 2) return true;
+    } else {
+      if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 25) <= 2) return true;
+    }
+
     if (y <= 0 && y >= -2) {
-       const initialBlock = getSummerLabBlock(Math.floor(x), Math.floor(y), Math.floor(z));
+       const initialBlock = this.currentPhase ? getWaterParkBlock(fx, fy, fz) : getSummerLabBlock(fx, fy, fz);
        if (initialBlock !== 0) return true;
     }
     return false;
@@ -150,7 +166,7 @@ export class SummerLabMode implements GameModeInfo {
     );
     if (chunkType !== undefined) return chunkType;
 
-    return getSummerLabBlock(x, Math.floor(y), z);
+    return this.currentPhase ? getWaterParkBlock(x, Math.floor(y), z) : getSummerLabBlock(x, Math.floor(y), z);
   }
 
   getRespawnPosition(
