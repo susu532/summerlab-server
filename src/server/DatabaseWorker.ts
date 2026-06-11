@@ -85,6 +85,17 @@ parentPort?.on('message', (msg) => {
     for (const chunk of chunksData) {
       chunkQueue.push({ world, chunkId: chunk.chunkId, data: chunk.data });
     }
+  } else if (msg.type === 'clear_chunks') {
+    const { world } = msg;
+    // Clear queue so pending inserts don't recreate ghost chunks
+    chunkQueue = chunkQueue.filter((item) => item.world !== world);
+    try {
+      const db = getDB(world);
+      const deleteChunks = db.prepare(`DELETE FROM chunk_data WHERE world = ?`);
+      deleteChunks.run(world);
+    } catch (e) {
+      console.error('Error in DatabaseWorker clear_chunks:', e);
+    }
   } else if (msg.type === 'save_npcs') {
     const { world, data } = msg;
     try {

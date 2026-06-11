@@ -58,7 +58,16 @@ export class SummerLabMode implements GameModeInfo {
                      const sz = z + (Math.random() - 0.5) * 0.8;
                      const sy = y + 1.01;
                      
-                     const splat = [sx, sy, sz, 0, 1, 0, splatColor];
+                     let finalColor = splatColor;
+                     if (isWaterPark) {
+                        // Cyan/Aqua variations
+                        finalColor = Math.random() < 0.3 ? 0x00E5FF : splatColor;
+                     } else {
+                        // Darker chocolate variations
+                        finalColor = Math.random() < 0.3 ? 0x2b1301 : splatColor;
+                     }
+                     
+                     const splat = [sx, sy, sz, 0, 1, 0, finalColor];
                      const key = Math.floor(sx * 5) + "," + Math.floor(sy * 5) + "," + Math.floor(sz * 5);
                      ctx.globalSplats.set(key, splat);
                      placed++;
@@ -81,6 +90,7 @@ export class SummerLabMode implements GameModeInfo {
          this.currentPhase = phase;
          ctx.chunkManager.resetWorld();
          ctx.globalSplats.clear();
+         ctx.state.lastMapResetTime = Date.now();
          
          // Clear dropped items to prevent them from getting stuck
          for (const itemId in ctx.droppedItems) {
@@ -96,6 +106,7 @@ export class SummerLabMode implements GameModeInfo {
          }
          
          this.generateSplats(ctx);
+         ctx.ioNamespace.emit("splats", Array.from(ctx.globalSplats.values()));
          
          // Notify players
          const modeName = phase ? "Water Park" : "Summer Lab Classic";

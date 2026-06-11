@@ -181,9 +181,14 @@ export class ChunkManager {
     this.dbChunks.clear();
     this.dirtyChunks.clear();
     try {
-      const stmt = this.db.prepare(`DELETE FROM chunk_data WHERE world = ?`);
-      stmt.run(this.worldName);
-      console.log(`[${this.worldName}] World has been completely reset.`);
+      // Direct deletion has a race condition with DatabaseWorker's insert queue.
+      // Hand over the job to DatabaseWorker so it drops any pending inserts and deletes in order.
+      const { parentPort } = require('worker_threads');
+      parentPort?.postMessage({
+        type: 'clear_chunks',
+        world: this.worldName
+      });
+      console.log(`[${this.worldName}] World has been completely reset (delegated to DB worker).`);
     } catch (e) {
       console.error('Error resetting world map:', e);
     }

@@ -51,6 +51,7 @@ export class GameServerContext {
   hasSetEndgameMessage: boolean = false;
   hasBeenReset: boolean = false;
   gameStartTime: number = Date.now();
+  lastMapResetTime: number = 0;
   lastOvertimeDamageTick: number = 0;
   lastSkyCastlesSyncJSON: string = "";
 

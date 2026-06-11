@@ -38,6 +38,7 @@ export interface GameContext {
     gameState: string;
     winningTeam: string | null;
     gameStartTime: number;
+    lastMapResetTime: number;
     resetCountdown: number | null;
     emptyRoomSince: number | null;
     hasSetEndgameMessage: boolean;

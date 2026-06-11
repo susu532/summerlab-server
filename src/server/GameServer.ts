@@ -50,6 +50,7 @@ export function createGameServer(io: any, db: any, mode: GameModeInfo, genWorker
     gameState: "playing",
     winningTeam: null as string | null,
     gameStartTime: Date.now(),
+    lastMapResetTime: 0,
     resetCountdown: null as number | null,
     emptyRoomSince: null as number | null,
     hasSetEndgameMessage: false,

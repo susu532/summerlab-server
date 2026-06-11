@@ -803,6 +803,14 @@ const floats = getFloat32Array(buf);
 
       const now = Date.now();
       if (player.lastBlockTime && now - player.lastBlockTime < 10) return; // Max 100 blocks per second per player
+      
+      // Ignore block placement from clients that might still be playing on the "old" map just after a rotation
+      if (ctx.state.lastMapResetTime && now - ctx.state.lastMapResetTime < 3000) {
+        const currentBlock = getBlockAt(x, y, z);
+        socket.emit("blockChanged", { x, y, z, type: currentBlock || 0 });
+        return;
+      }
+      
       player.lastBlockTime = now;
 
       if (player) {
