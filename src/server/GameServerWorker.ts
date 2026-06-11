@@ -7,6 +7,7 @@ import { SummerLabMode } from './modes/SummerLabMode.ts';
 import { DungeonDelverMode } from './modes/DungeonDelverMode.ts';
 import { BattleRoyaleMode } from './modes/BattleRoyaleMode.ts';
 import { SkyIslandMode } from './modes/SkyIslandMode.ts';
+import { HappyIslandMode } from './modes/HappyIslandMode.ts';
 import { encodePacket, decodePacket } from './WSHelpers.ts';
 import { parentPort, workerData, Worker } from 'worker_threads';
 import { WebSocketServer } from 'ws';
@@ -34,6 +35,7 @@ function getModeFactory(name: string) {
   // if (name === 'skybridge') return new SkyBridgeMode();
   // if (name === 'skycastles') return new SkyCastlesMode('/skycastles');
   if (name === 'summerlab') return new SummerLabMode('/summerlab');
+  if (name === 'happyisland') return new HappyIslandMode('/happyisland');
   // if (name === 'dungeondelver') return new DungeonDelverMode();
   // if (name === 'battleroyale') return new BattleRoyaleMode();
   // if (name === 'skyisland') return new SkyIslandMode('/skyisland');

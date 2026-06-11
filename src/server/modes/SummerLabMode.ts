@@ -3,28 +3,30 @@ import { BLOCK, CHUNK_SIZE, WORLD_Y_OFFSET, isWaterBlock } from "../constants";
 import { ChunkManager } from "../ChunkManager";
 import { getSummerLabBlock } from "../../game/generation/SummerLabGenerator";
 import { getWaterParkBlock } from "../../game/generation/WaterParkGenerator";
-
-export function isWaterParkPhase(now: number = Date.now()): boolean {
-   return Math.floor(now / 600000) % 2 === 1;
-}
+import { getHappyIslandBlock } from "../../game/generation/HappyIslandGenerator";
 import { GameContext } from "../GameContext";
 import { ItemType } from "../../game/Inventory";
+
+export function getSummerLabPhase(now: number = Date.now()): number {
+   return Math.floor(now / 600000) % 3; // 0: Classic, 1: WaterPark, 2: HappyIsland
+}
 
 export class SummerLabMode implements GameModeInfo {
   name: string;
   allowPvP = true;
   allowMobSpawns = false;
   allowPlayerMobSpawns = false;
-  currentPhase: boolean = false;
+  currentPhase: number = 0;
   initialized: boolean = false;
 
   constructor(name: string) {
     this.name = name;
-    this.currentPhase = isWaterParkPhase(Date.now());
+    this.currentPhase = getSummerLabPhase(Date.now());
   }
 
    generateSplats(ctx: GameContext) {
-     const isWaterPark = this.currentPhase;
+     if (this.currentPhase === 2) return; // Happy Island has no splats
+     const isWaterPark = this.currentPhase === 1;
      const splatColor = isWaterPark ? 0x00A8FF : 0x3d1c04; // Blue for water park, Chocolate for classic
      let placed = 0;
      
@@ -79,7 +81,7 @@ export class SummerLabMode implements GameModeInfo {
   }
 
   onTick(ctx: GameContext, delta: number, now: number) {
-     const phase = isWaterParkPhase(now);
+     const phase = getSummerLabPhase(now);
      
      if (!this.initialized) {
          this.initialized = true;
@@ -109,7 +111,7 @@ export class SummerLabMode implements GameModeInfo {
          ctx.ioNamespace.emit("splats", Array.from(ctx.globalSplats.values()));
          
          // Notify players
-         const modeName = phase ? "Water Park" : "Summer Lab Classic";
+         const modeName = phase === 1 ? "Water Park" : phase === 2 ? "Happy Island" : "Summer Lab Classic";
          ctx.ioNamespace.emit("chatMessage", {
              sender: "System",
              message: `World updated! Now entering: ${modeName}!`,
@@ -117,7 +119,7 @@ export class SummerLabMode implements GameModeInfo {
          
          // In a voxel engine, chunks aren't auto-sent if they were already sent and cleared from server.
          // Tell clients to clear their chunks and re-request.
-         ctx.ioNamespace.emit("forceReloadMap", { isWaterPark: phase });
+         ctx.ioNamespace.emit("forceReloadMap", { phase: phase });
          
          // Reposition everyone
          const respawn = this.getRespawnPosition("system");
@@ -144,14 +146,20 @@ export class SummerLabMode implements GameModeInfo {
     const fz = Math.floor(z);
 
     // 5x5 disallowed building zone at spawn positions
-    if (this.currentPhase) {
+    if (this.currentPhase === 1) {
       if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 35) <= 2) return true;
+    } else if (this.currentPhase === 2) {
+      if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 0) <= 2) return true;
     } else {
       if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 25) <= 2) return true;
     }
 
     if (y <= 0 && y >= -2) {
-       const initialBlock = this.currentPhase ? getWaterParkBlock(fx, fy, fz) : getSummerLabBlock(fx, fy, fz);
+       let initialBlock = 0;
+       if (this.currentPhase === 1) initialBlock = getWaterParkBlock(fx, fy, fz);
+       else if (this.currentPhase === 2) initialBlock = getHappyIslandBlock(fx, fy, fz);
+       else initialBlock = getSummerLabBlock(fx, fy, fz);
+       
        if (initialBlock !== 0) return true;
     }
     return false;
@@ -177,7 +185,9 @@ export class SummerLabMode implements GameModeInfo {
     );
     if (chunkType !== undefined) return chunkType;
 
-    return this.currentPhase ? getWaterParkBlock(x, Math.floor(y), z) : getSummerLabBlock(x, Math.floor(y), z);
+    if (this.currentPhase === 1) return getWaterParkBlock(x, Math.floor(y), z);
+    if (this.currentPhase === 2) return getHappyIslandBlock(x, Math.floor(y), z);
+    return getSummerLabBlock(x, Math.floor(y), z);
   }
 
   getRespawnPosition(
@@ -186,9 +196,11 @@ export class SummerLabMode implements GameModeInfo {
     chunkManager?: ChunkManager,
     bakedBlocks?: Map<string, number>,
   ): { x: number; y: number; z: number; yaw?: number } {
-    if (this.currentPhase) {
+    if (this.currentPhase === 1) {
          // Water Park mode -> spawn on the main walkway at z=35, perfectly flat ground, y=5 drops them gently to y=1
       return { x: 0, y: 6, z: 35, yaw: 0 };
+    } else if (this.currentPhase === 2) {
+      return { x: 0, y: 25, z: 0, yaw: 0 };
     }
     // Summer Lab Classic mode -> spawn in the courtyard outside the keep at z=25, ground is at y=0
     return { x: 0, y: 6, z: 25, yaw: 0 };
