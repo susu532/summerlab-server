@@ -4,11 +4,12 @@ import { ChunkManager } from "../ChunkManager";
 import { getSummerLabBlock } from "../../game/generation/SummerLabGenerator";
 import { getWaterParkBlock } from "../../game/generation/WaterParkGenerator";
 import { getHappyIslandBlock } from "../../game/generation/HappyIslandGenerator";
+import { getBackroomsBlock } from "../../game/generation/BackroomsGenerator";
 import { GameContext } from "../GameContext";
 import { ItemType } from "../../game/Inventory";
 
 export function getSummerLabPhase(now: number = Date.now()): number {
-   return Math.floor(now / 600000) % 3; // 0: Classic, 1: WaterPark, 2: HappyIsland
+   return Math.floor(now / 600000) % 4; // 0: Classic, 1: WaterPark, 2: HappyIsland, 3: Backrooms
 }
 
 export class SummerLabMode implements GameModeInfo {
@@ -25,7 +26,7 @@ export class SummerLabMode implements GameModeInfo {
   }
 
    generateSplats(ctx: GameContext) {
-     if (this.currentPhase === 2) return; // Happy Island has no splats
+     if (this.currentPhase === 2 || this.currentPhase === 3) return; // Happy Island & Backrooms have no splats
      const isWaterPark = this.currentPhase === 1;
      const splatColor = isWaterPark ? 0x00A8FF : 0x3d1c04; // Blue for water park, Chocolate for classic
      let placed = 0;
@@ -92,6 +93,7 @@ export class SummerLabMode implements GameModeInfo {
          this.currentPhase = phase;
          ctx.chunkManager.resetWorld();
          ctx.globalSplats.clear();
+         ctx.pendingBlockUpdates.length = 0;
          ctx.state.lastMapResetTime = Date.now();
          
          // Clear dropped items to prevent them from getting stuck
@@ -111,7 +113,7 @@ export class SummerLabMode implements GameModeInfo {
          ctx.ioNamespace.emit("splats", Array.from(ctx.globalSplats.values()));
          
          // Notify players
-         const modeName = phase === 1 ? "Water Park" : phase === 2 ? "Happy Island" : "Summer Lab Classic";
+         const modeName = phase === 1 ? "Water Park" : phase === 2 ? "Happy Island" : phase === 3 ? "The Backrooms" : "Summer Lab Classic";
          ctx.ioNamespace.emit("chatMessage", {
              sender: "System",
              message: `World updated! Now entering: ${modeName}!`,
@@ -148,18 +150,25 @@ export class SummerLabMode implements GameModeInfo {
       if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 35) <= 2) return true;
     } else if (this.currentPhase === 2) {
       if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 0) <= 2) return true;
+    } else if (this.currentPhase === 3) {
+      // The Backrooms is a maze that should not be altered, so protect its blocks fully.
+      const initialBlock = getBackroomsBlock(fx, fy, fz);
+      if (initialBlock !== 0 && initialBlock !== ItemType.AIR) return true;
+      if (Math.abs(fx - 2) <= 2 && Math.abs(fz - 2) <= 2) return true;
     } else {
       if (Math.abs(fx - 0) <= 2 && Math.abs(fz - 25) <= 2) return true;
     }
 
-    if (y <= 0 && y >= -2) {
-       let initialBlock = 0;
-       if (this.currentPhase === 1) initialBlock = getWaterParkBlock(fx, fy, fz);
-       else if (this.currentPhase === 2) initialBlock = getHappyIslandBlock(fx, fy, fz);
-       else initialBlock = getSummerLabBlock(fx, fy, fz);
-       
-       if (initialBlock !== 0) return true;
-    }
+    // Instead of just protecting y <= 0, protect ANY block that was part of the original map generation
+    // so players can't tear down the castle, water park rules, or happy island trees.
+    let initialBlock = 0;
+    if (this.currentPhase === 1) initialBlock = getWaterParkBlock(fx, fy, fz);
+    else if (this.currentPhase === 2) initialBlock = getHappyIslandBlock(fx, fy, fz);
+    else if (this.currentPhase === 3) initialBlock = getBackroomsBlock(fx, fy, fz);
+    else initialBlock = getSummerLabBlock(fx, fy, fz);
+    
+    if (initialBlock !== 0 && initialBlock !== ItemType.AIR) return true;
+
     return false;
   }
 
@@ -185,6 +194,7 @@ export class SummerLabMode implements GameModeInfo {
 
     if (this.currentPhase === 1) return getWaterParkBlock(x, Math.floor(y), z);
     if (this.currentPhase === 2) return getHappyIslandBlock(x, Math.floor(y), z);
+    if (this.currentPhase === 3) return getBackroomsBlock(x, Math.floor(y), z);
     return getSummerLabBlock(x, Math.floor(y), z);
   }
 
@@ -194,13 +204,36 @@ export class SummerLabMode implements GameModeInfo {
     chunkManager?: ChunkManager,
     bakedBlocks?: Map<string, number>,
   ): { x: number; y: number; z: number; yaw?: number } {
+    let spawnY = 25;
     if (this.currentPhase === 1) {
-         // Water Park mode -> spawn on the main walkway at z=35, perfectly flat ground, y=5 drops them gently to y=1
-      return { x: 0, y: 6, z: 35, yaw: 0 };
+      spawnY = 2; // Water Park Walkway
+      for(let y = 10; y >= 0; y--) {
+        if (getWaterParkBlock(0, y, 35) !== 0 && getWaterParkBlock(0, y, 35) !== ItemType.WATER) {
+           spawnY = y + 1.5;
+           break;
+        }
+      }
+      return { x: 0, y: spawnY, z: 35, yaw: 0 };
     } else if (this.currentPhase === 2) {
-      return { x: 0, y: 25, z: 0, yaw: 0 };
+      spawnY = 18;
+      for(let y = 30; y >= 0; y--) {
+        if (getHappyIslandBlock(0, y, 0) !== 0) {
+           spawnY = y + 1.5;
+           break;
+        }
+      }
+      return { x: 0, y: spawnY, z: 0, yaw: 0 };
+    } else if (this.currentPhase === 3) {
+      return { x: 2.5, y: 1.5, z: 2.5, yaw: 0 };
     }
-    // Summer Lab Classic mode -> spawn in the courtyard outside the keep at z=25, ground is at y=0
-    return { x: 0, y: 6, z: 25, yaw: 0 };
+    
+    spawnY = 2;
+    for(let y = 20; y >= 0; y--) {
+      if (getSummerLabBlock(0, y, 25) !== 0) {
+         spawnY = y + 1.5;
+         break;
+      }
+    }
+    return { x: 0, y: spawnY, z: 25, yaw: 0 };
   }
 }

@@ -482,6 +482,8 @@ export class SkyCastlesMode implements GameModeInfo {
           : -1;
     }
     yaw = sideZ === -1 ? Math.PI : 0;
-    return { x: 0, y: 66, z: sideZ * 195, yaw };
+    const rx = (Math.random() - 0.5) * 10;
+    const rzOffset = (Math.random() - 0.5) * 10;
+    return { x: rx, y: 66, z: sideZ * 195 + rzOffset, yaw };
   }
 }

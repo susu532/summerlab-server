@@ -40,6 +40,13 @@ export class HappyIslandMode implements GameModeInfo {
     chunkManager?: ChunkManager,
     bakedBlocks?: Map<string, number>,
   ): { x: number; y: number; z: number; yaw?: number } {
-    return { x: 0, y: 25, z: 0, yaw: 0 };
+    let spawnY = 18;
+    for (let y = 30; y >= 0; y--) {
+      if (getHappyIslandBlock(0, y, 0) !== 0) {
+        spawnY = y + 1.5;
+        break;
+      }
+    }
+    return { x: 0, y: spawnY, z: 0, yaw: 0 };
   }
 }
