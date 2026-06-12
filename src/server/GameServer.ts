@@ -710,7 +710,7 @@ const ctx: import("./GameContext").GameContext = {
       velocity: { x: 0, y: 0, z: 0 },
       rotation: respawnData.yaw !== undefined ? { x: 0, y: respawnData.yaw, z: 0 } : { x: 0, y: 0, z: 0 },
       skinSeed: "cool_kid_123",
-      name: "chubby dolphin58473256",
+      name: "smol fish20563008",
       health: 100,
       maxHealth: 100,
       defense: 0,
