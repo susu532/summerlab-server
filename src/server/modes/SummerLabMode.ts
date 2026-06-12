@@ -127,9 +127,7 @@ export class SummerLabMode implements GameModeInfo {
              const p = ctx.players[id];
              p.position = { x: respawn.x, y: respawn.y, z: respawn.z };
              p.velocity = { x: 0, y: 0, z: 0 };
-             if (!p.isBot) {
-               ctx.ioNamespace.to(id).emit("playerRespawn", { id, position: p.position });
-             }
+             ctx.ioNamespace.emit("playerRespawn", { id, position: p.position, yaw: respawn.yaw });
          }
      }
   }

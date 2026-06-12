@@ -267,7 +267,7 @@ async function startServer() {
     });
 
     worker.on('message', async (msg: any) => {
-        if (msg.type === 'save_chunks' || msg.type === 'save_npcs') {
+        if (msg.type === 'save_chunks' || msg.type === 'save_npcs' || msg.type === 'clear_chunks') {
             dbWorker.postMessage(msg);
         } else if (msg.type === 'playerCount') {
             const list = activeInstances[baseName];
