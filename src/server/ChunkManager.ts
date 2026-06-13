@@ -30,6 +30,7 @@ export class ChunkManager {
   }
 
   loadChunksFromDB() {
+    if (this.worldName.startsWith('summerlab')) return;
     try {
       const rows = this.getAllChunks.all(this.worldName) as any[];
       for (const row of rows) {
@@ -77,22 +78,24 @@ export class ChunkManager {
       return dbChanges;
     }
     
-    // Attempt lazy load from DB
-    try {
-      const row = this.getChunk.get(this.worldName, key) as any;
-      if (row && row.data) {
-        const buffer = row.data.buffer || row.data;
-        dbChanges = new Uint16Array(
-          buffer,
-          row.data.byteOffset || 0,
-          row.data.byteLength / 2
-        );
-        this.dbChunks.set(key, dbChanges);
-        this.chunks.set(key, dbChanges);
-        return dbChanges;
+    // Attempt lazy load from DB if not summerlab (which rotates extremely frequently)
+    if (!this.worldName.startsWith('summerlab')) {
+      try {
+        const row = this.getChunk.get(this.worldName, key) as any;
+        if (row && row.data) {
+          const buffer = row.data.buffer || row.data;
+          dbChanges = new Uint16Array(
+            buffer,
+            row.data.byteOffset || 0,
+            row.data.byteLength / 2
+          );
+          this.dbChunks.set(key, dbChanges);
+          this.chunks.set(key, dbChanges);
+          return dbChanges;
+        }
+      } catch (e) {
+        console.error('Error lazy loading chunk from DB:', e);
       }
-    } catch (e) {
-      console.error('Error lazy loading chunk from DB:', e);
     }
     
     if (createIfMissing) {
@@ -154,7 +157,7 @@ export class ChunkManager {
       this.dirtyChunks.delete(chunkId);
     }
 
-    if (chunksData.length > 0) {
+    if (chunksData.length > 0 && !this.worldName.startsWith('summerlab')) {
       parentPort?.postMessage({
         type: 'save_chunks',
         world: this.worldName,
@@ -166,6 +169,8 @@ export class ChunkManager {
   }
 
   unloadIdleChunks(players: Record<string, any>, renderDistance: number) {
+    if (this.worldName.startsWith('summerlab')) return; // Do not unload for summerlab so changes persist in memory
+
     const activeChunkCoords = new Set<string>();
     for (const p of Object.values(players)) {
       if (!p.position || p.isBot) continue;
