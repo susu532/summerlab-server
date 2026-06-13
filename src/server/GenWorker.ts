@@ -2,8 +2,9 @@ import { getBattleRoyaleBlock } from '../game/generation/BattleRoyaleGenerator';
 import { generateHubTerrain } from '../game/generation/HubGenerator';
 import { CHUNK_SIZE, CHUNK_HEIGHT, WORLD_Y_OFFSET } from './constants';
 
-export default async function generateChunk(msg: { cx: number; cz: number; worldName: string; modeName: string }) {
-  const { cx, cz, worldName, modeName } = msg;
+export default async function generateChunk(msg: { cx: number; cz: number; worldName: string; modeName: string; epoch?: number }) {
+  const { cx, cz, worldName, modeName, epoch } = msg;
+
   const chunkData = new Uint16Array(CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE);
   chunkData.fill(65535);
 
@@ -40,6 +41,6 @@ export default async function generateChunk(msg: { cx: number; cz: number; world
   }
 
   return {
-    cx, cz, worldName, data: chunkData.buffer
+    cx, cz, worldName, epoch, data: chunkData.buffer
   };
 }

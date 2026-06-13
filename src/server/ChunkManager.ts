@@ -18,6 +18,8 @@ export class ChunkManager {
   getChunk: Database.Statement;
   getAllChunks: Database.Statement;
 
+  epoch: number = 0;
+
   constructor(worldName: string, db: Database.Database) {
     this.worldName = worldName;
     this.db = db;
@@ -69,10 +71,28 @@ export class ChunkManager {
     let changes = this.chunks.get(key);
     if (changes) return changes;
     
-    const dbChanges = this.dbChunks.get(key);
+    let dbChanges = this.dbChunks.get(key);
     if (dbChanges) {
       this.chunks.set(key, dbChanges);
       return dbChanges;
+    }
+    
+    // Attempt lazy load from DB
+    try {
+      const row = this.getChunk.get(this.worldName, key) as any;
+      if (row && row.data) {
+        const buffer = row.data.buffer || row.data;
+        dbChanges = new Uint16Array(
+          buffer,
+          row.data.byteOffset || 0,
+          row.data.byteLength / 2
+        );
+        this.dbChunks.set(key, dbChanges);
+        this.chunks.set(key, dbChanges);
+        return dbChanges;
+      }
+    } catch (e) {
+      console.error('Error lazy loading chunk from DB:', e);
     }
     
     if (createIfMissing) {
@@ -146,8 +166,6 @@ export class ChunkManager {
   }
 
   unloadIdleChunks(players: Record<string, any>, renderDistance: number) {
-    if (this.worldName.startsWith('summerlab')) return; // Do not unload for summerlab so changes persist in memory
-
     const activeChunkCoords = new Set<string>();
     for (const p of Object.values(players)) {
       if (!p.position || p.isBot) continue;
@@ -177,6 +195,7 @@ export class ChunkManager {
   }
 
   resetWorld() {
+    this.epoch++;
     this.chunks.clear();
     this.dbChunks.clear();
     this.dirtyChunks.clear();

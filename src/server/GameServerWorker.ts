@@ -25,7 +25,7 @@ const genWorker = parentPort!;
 parentPort?.on('message', (msg) => {
   if (msg.type === 'chunk_generated') {
       if ((api as any) && (api as any).injectChunk) {
-          (api as any).injectChunk(msg.cx, msg.cz, msg.data);
+          (api as any).injectChunk(msg.cx, msg.cz, msg.data, msg.epoch);
       }
   }
 });

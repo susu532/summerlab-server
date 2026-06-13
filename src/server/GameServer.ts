@@ -230,7 +230,7 @@ export function createGameServer(io: any, db: any, mode: GameModeInfo, genWorker
     // If the chunk is literally empty/ungenerated, we could fall back to the game mode's terrain generator
     if (currentBlock === undefined) {
       if (genWorker && !chunkManager.chunks.has(`${cx},${cz}`)) {
-         genWorker.postMessage({ type: 'generate', cx, cz, worldName, modeName: mode.name });
+         genWorker.postMessage({ type: 'generate', cx, cz, worldName, modeName: mode.name, epoch: chunkManager.epoch });
          // Mark as generating so we don't spam requests. The 65535 array isn't placed yet.
          // Wait, the client expects fallback. Let's just return mode.getBlockAt directly to not break falling collisions right now.
       }
@@ -248,7 +248,7 @@ export function createGameServer(io: any, db: any, mode: GameModeInfo, genWorker
     if (currentBlock === undefined) {
       if (genWorker && !chunkManager.chunks.has(`${cx},${cz}`) && !chunkManager.dirtyChunks.has(`${cx},${cz}#gen`)) {
          chunkManager.dirtyChunks.add(`${cx},${cz}#gen`); // tag to prevent spam
-         genWorker.postMessage({ type: 'generate', cx, cz, worldName, modeName: mode.name });
+         genWorker.postMessage({ type: 'generate', cx, cz, worldName, modeName: mode.name, epoch: chunkManager.epoch });
       }
     }
     return mode.getBlockAt(x, y, z, chunkManager, bakedBlocks);
@@ -737,7 +737,8 @@ const ctx: import("./GameContext").GameContext = {
       ioNamespace.removeAllListeners();
       console.log(`Destroyed instance ${mode.name}`);
     },
-    injectChunk: (cx: number, cz: number, data: ArrayBuffer | Buffer) => {
+    injectChunk: (cx: number, cz: number, data: ArrayBuffer | Buffer, epoch?: number) => {
+       if (epoch !== undefined && epoch !== chunkManager.epoch) return;
        const key = `${cx},${cz}`;
        chunkManager.dirtyChunks.delete(`${key}#gen`);
        if (!chunkManager.chunks.has(key)) {
