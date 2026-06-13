@@ -9,7 +9,7 @@ import { GameContext } from "../GameContext";
 import { ItemType } from "../../game/Inventory";
 
 export function getSummerLabPhase(now: number = Date.now()): number {
-   return Math.floor(now / 600000) % 4; // 0: Classic, 1: WaterPark, 2: HappyIsland, 3: Backrooms
+   return Math.floor(now / 300000) % 4; // 0: Classic, 1: WaterPark, 2: HappyIsland, 3: Backrooms
 }
 
 export class SummerLabMode implements GameModeInfo {
