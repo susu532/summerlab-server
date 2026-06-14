@@ -380,69 +380,69 @@ const ctx: import("./GameContext").GameContext = {
         return !!type && !isWaterBlock(type); // Ignore AIR and WATER
     };
     
-    let splatGenCount = 0;
-    const normals = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
-    const possibleColors = [0x3d1c04, 0x8b4513, 0xa0522d, 0xcd853f, 0xd2691e, 0xffa500, 0xff8c00];
+    // let splatGenCount = 0;
+    // const normals = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
+    // const possibleColors = [0x3d1c04, 0x8b4513, 0xa0522d, 0xcd853f, 0xd2691e, 0xffa500, 0xff8c00];
 
-    for (let attempts = 0; attempts < 50000 && splatGenCount < 1000; attempts++) {
-        const x = Math.floor(Math.random() * 128) - 64;
-        const z = Math.floor(Math.random() * 128) - 64;
-        const y = Math.floor(Math.random() * 40);
+    // for (let attempts = 0; attempts < 50000 && splatGenCount < 1000; attempts++) {
+    //     const x = Math.floor(Math.random() * 128) - 64;
+    //     const z = Math.floor(Math.random() * 128) - 64;
+    //     const y = Math.floor(Math.random() * 40);
         
-        if (isSolid(x, y, z)) {
-            const n = normals[Math.floor(Math.random() * normals.length)];
-            const nx = x + n[0];
-            const ny = y + n[1];
-            const nz = z + n[2];
+    //     if (isSolid(x, y, z)) {
+    //         const n = normals[Math.floor(Math.random() * normals.length)];
+    //         const nx = x + n[0];
+    //         const ny = y + n[1];
+    //         const nz = z + n[2];
             
-            const neighborBlock = mode.getBlockAt(nx, ny, nz, chunkManager, bakedBlocks);
+    //         const neighborBlock = mode.getBlockAt(nx, ny, nz, chunkManager, bakedBlocks);
             
-            if (ny >= 0 && (!neighborBlock || neighborBlock === 0)) {
-                let uAxis = [0, 1, 0];
-                let vAxis = [0, 0, 1];
-                if (Math.abs(n[1]) > 0) {
-                    uAxis = [1, 0, 0];
-                    vAxis = [0, 0, 1];
-                } else if (Math.abs(n[2]) > 0) {
-                    uAxis = [1, 0, 0];
-                    vAxis = [0, 1, 0];
-                }
+    //         if (ny >= 0 && (!neighborBlock || neighborBlock === 0)) {
+    //             let uAxis = [0, 1, 0];
+    //             let vAxis = [0, 0, 1];
+    //             if (Math.abs(n[1]) > 0) {
+    //                 uAxis = [1, 0, 0];
+    //                 vAxis = [0, 0, 1];
+    //             } else if (Math.abs(n[2]) > 0) {
+    //                 uAxis = [1, 0, 0];
+    //                 vAxis = [0, 1, 0];
+    //             }
                 
-                const col = possibleColors[Math.floor(Math.random() * possibleColors.length)];
+    //             const col = possibleColors[Math.floor(Math.random() * possibleColors.length)];
                 
-                // Pick a center point on the face for the cluster
-                const centerU = (Math.random() - 0.5) * 0.7;
-                const centerV = (Math.random() - 0.5) * 0.7;
+    //             // Pick a center point on the face for the cluster
+    //             const centerU = (Math.random() - 0.5) * 0.7;
+    //             const centerV = (Math.random() - 0.5) * 0.7;
                 
-                const clusterCount = 5 + Math.floor(Math.random() * 5);
-                for (let i = 0; i < clusterCount; i++) {
-                    if (splatGenCount >= 1000) break;
+    //             const clusterCount = 5 + Math.floor(Math.random() * 5);
+    //             for (let i = 0; i < clusterCount; i++) {
+    //                 if (splatGenCount >= 1000) break;
                     
-                    // Offset from center, but clamped to face boundaries [-0.5, 0.5]
-                    let u = centerU + (Math.random() - 0.5) * 0.5;
-                    let v = centerV + (Math.random() - 0.5) * 0.5;
+    //                 // Offset from center, but clamped to face boundaries [-0.5, 0.5]
+    //                 let u = centerU + (Math.random() - 0.5) * 0.5;
+    //                 let v = centerV + (Math.random() - 0.5) * 0.5;
                     
-                    u = Math.max(-0.5, Math.min(0.5, u));
-                    v = Math.max(-0.5, Math.min(0.5, v));
+    //                 u = Math.max(-0.5, Math.min(0.5, u));
+    //                 v = Math.max(-0.5, Math.min(0.5, v));
                     
-                    let rx = x + 0.5 + n[0] * 0.51 + uAxis[0] * u + vAxis[0] * v;
-                    let ry = y + 0.5 + n[1] * 0.51 + uAxis[1] * u + vAxis[1] * v;
-                    let rz = z + 0.5 + n[2] * 0.51 + uAxis[2] * u + vAxis[2] * v;
+    //                 let rx = x + 0.5 + n[0] * 0.51 + uAxis[0] * u + vAxis[0] * v;
+    //                 let ry = y + 0.5 + n[1] * 0.51 + uAxis[1] * u + vAxis[1] * v;
+    //                 let rz = z + 0.5 + n[2] * 0.51 + uAxis[2] * u + vAxis[2] * v;
                     
-                    const splat = [rx, ry, rz, n[0], n[1], n[2], col];
-                    const px = Math.floor(splat[0] * 5);
-                    const py = Math.floor(splat[1] * 5);
-                    const pz = Math.floor(splat[2] * 5);
-                    const key = `${px},${py},${pz}`;
+    //                 const splat = [rx, ry, rz, n[0], n[1], n[2], col];
+    //                 const px = Math.floor(splat[0] * 5);
+    //                 const py = Math.floor(splat[1] * 5);
+    //                 const pz = Math.floor(splat[2] * 5);
+    //                 const key = `${px},${py},${pz}`;
                     
-                    if (!globalSplats.has(key)) {
-                        globalSplats.set(key, splat);
-                        splatGenCount++;
-                    }
-                }
-            }
-        }
-    }
+    //                 if (!globalSplats.has(key)) {
+    //                     globalSplats.set(key, splat);
+    //                     splatGenCount++;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     ioNamespace.emit("entitiesReset", { mobs, droppedItems, gameStartTime: state.gameStartTime });
     ioNamespace.emit("splats", Array.from(globalSplats.values()));

@@ -9,7 +9,8 @@ import { GameContext } from "../GameContext";
 import { ItemType } from "../../game/Inventory";
 
 export function getSummerLabPhase(now: number = Date.now()): number {
-   return Math.floor(now / 300000) % 4; // 0: Classic, 1: WaterPark, 2: HappyIsland, 3: Backrooms
+   // return Math.floor(now / 300000) % 4; // 0: Classic, 1: WaterPark, 2: HappyIsland, 3: Backrooms
+   return 0;
 }
 
 export class SummerLabMode implements GameModeInfo {
@@ -32,53 +33,53 @@ export class SummerLabMode implements GameModeInfo {
      let placed = 0;
      
      // 15000 randomized attempts to place up to 2000 splats
-     for (let i = 0; i < 15000 && placed < 2000; i++) {
-         const x = Math.floor(Math.random() * 128) - 64;
-         const z = Math.floor(Math.random() * 128) - 64;
+    //  for (let i = 0; i < 15000 && placed < 2000; i++) {
+    //      const x = Math.floor(Math.random() * 128) - 64;
+    //      const z = Math.floor(Math.random() * 128) - 64;
          
-         // Optimize raycast starting Y based on map layout
-         const ax = Math.abs(x);
-         const az = Math.abs(z);
-         let startY = 5; // Default for ground outside castle
-         if (ax <= 4 && az <= 4) startY = 85; 
-         else if (ax <= 20 && az <= 20) startY = 60; 
-         else if (Math.abs(ax - 35) <= 7 && Math.abs(az - 35) <= 7) startY = 50; 
-         else if (ax <= 40 && ax >= 20 && az <= 40) startY = 15; 
+    //      // Optimize raycast starting Y based on map layout
+    //      const ax = Math.abs(x);
+    //      const az = Math.abs(z);
+    //      let startY = 5; // Default for ground outside castle
+    //      if (ax <= 4 && az <= 4) startY = 85; 
+    //      else if (ax <= 20 && az <= 20) startY = 60; 
+    //      else if (Math.abs(ax - 35) <= 7 && Math.abs(az - 35) <= 7) startY = 50; 
+    //      else if (ax <= 40 && ax >= 20 && az <= 40) startY = 15; 
          
-         if (isWaterPark) {
-             // Water park is generally much lower vertically
-             startY = 35;
-         }
+    //      if (isWaterPark) {
+    //          // Water park is generally much lower vertically
+    //          startY = 35;
+    //      }
          
-         // Raycast downwards from the localized max height 
-         for (let y = startY; y >= -10; y--) {
-             const block = isWaterPark ? getWaterParkBlock(x, y, z) : getSummerLabBlock(x, y, z);
-             if (block !== 0) {
-                 // Found surface
-                 if (!isWaterBlock(block) && block !== ItemType.AIR) {
-                     // Not water, we can place the splat
-                     const sx = x + (Math.random() - 0.5) * 0.8;
-                     const sz = z + (Math.random() - 0.5) * 0.8;
-                     const sy = y + 1.01;
+    //      // Raycast downwards from the localized max height 
+    //      for (let y = startY; y >= -10; y--) {
+    //          const block = isWaterPark ? getWaterParkBlock(x, y, z) : getSummerLabBlock(x, y, z);
+    //          if (block !== 0) {
+    //              // Found surface
+    //              if (!isWaterBlock(block) && block !== ItemType.AIR) {
+    //                  // Not water, we can place the splat
+    //                  const sx = x + (Math.random() - 0.5) * 0.8;
+    //                  const sz = z + (Math.random() - 0.5) * 0.8;
+    //                  const sy = y + 1.01;
                      
-                     let finalColor = splatColor;
-                     if (isWaterPark) {
-                        // Cyan/Aqua variations
-                        finalColor = Math.random() < 0.3 ? 0x00E5FF : splatColor;
-                     } else {
-                        // Darker chocolate variations
-                        finalColor = Math.random() < 0.3 ? 0x2b1301 : splatColor;
-                     }
+    //                  let finalColor = splatColor;
+    //                  if (isWaterPark) {
+    //                     // Cyan/Aqua variations
+    //                     finalColor = Math.random() < 0.3 ? 0x00E5FF : splatColor;
+    //                  } else {
+    //                     // Darker chocolate variations
+    //                     finalColor = Math.random() < 0.3 ? 0x2b1301 : splatColor;
+    //                  }
                      
-                     const splat = [sx, sy, sz, 0, 1, 0, finalColor];
-                     const key = Math.floor(sx * 5) + "," + Math.floor(sy * 5) + "," + Math.floor(sz * 5);
-                     ctx.globalSplats.set(key, splat);
-                     placed++;
-                 }
-                 break; // Hit a block, don't continue down
-             }
-         }
-     }
+    //                  const splat = [sx, sy, sz, 0, 1, 0, finalColor];
+    //                  const key = Math.floor(sx * 5) + "," + Math.floor(sy * 5) + "," + Math.floor(sz * 5);
+    //                  ctx.globalSplats.set(key, splat);
+    //                  placed++;
+    //              }
+    //              break; // Hit a block, don't continue down
+    //          }
+    //      }
+    //  }
   }
 
   onTick(ctx: GameContext, delta: number, now: number) {
