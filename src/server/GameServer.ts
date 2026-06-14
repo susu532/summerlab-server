@@ -222,12 +222,8 @@ export function createGameServer(io: any, db: any, mode: GameModeInfo, genWorker
     // Do not force load the chunk synchronously. Active regions are already loaded.
     let currentBlock = chunkManager.getBlockFromChunk(cx, cz, lx, ly, lz);
 
-    // If a player placed this block, it must be breakable
-    if (currentBlock !== undefined && currentBlock > 0) {
-      return false;
-    }
-
     // If the chunk is literally empty/ungenerated, we could fall back to the game mode's terrain generator
+    // (We removed the old currentBlock > 0 check so that map-defined static geometry is protected)
     if (currentBlock === undefined) {
       if (genWorker && !chunkManager.chunks.has(`${cx},${cz}`)) {
          genWorker.postMessage({ type: 'generate', cx, cz, worldName, modeName: mode.name, epoch: chunkManager.epoch });
