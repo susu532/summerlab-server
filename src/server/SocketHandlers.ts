@@ -249,14 +249,17 @@ ctx.ioNamespace.on("connection", (socket) => {
             const pz = Math.floor(splat[2] * 5);
             const gridKey = `${px},${py},${pz}`;
             
-            // Limit map size
-            if (!ctx.globalSplats.has(gridKey) && ctx.globalSplats.size > 80000) {
-               // Remove random
-               const iterator = ctx.globalSplats.keys();
-               ctx.globalSplats.delete(iterator.next().value!);
+            const existing = ctx.globalSplats.get(gridKey);
+            if (!existing || existing[6] !== splat[6]) {
+               // Limit map size
+               if (!existing && ctx.globalSplats.size > 80000) {
+                  // Remove random
+                  const iterator = ctx.globalSplats.keys();
+                  ctx.globalSplats.delete(iterator.next().value!);
+               }
+               ctx.globalSplats.set(gridKey, splat);
+               toBroadcast.push(splat);
             }
-            ctx.globalSplats.set(gridKey, splat);
-            toBroadcast.push(splat);
          }
        }
        if (toBroadcast.length > 0) {
@@ -271,7 +274,7 @@ ctx.ioNamespace.on("connection", (socket) => {
        if (!keys || !Array.isArray(keys)) return;
        const toBroadcast = [];
        for (const k of keys) {
-         if (typeof k === "string") {
+         if (typeof k === "string" && ctx.globalSplats.has(k)) {
             ctx.globalSplats.delete(k);
             toBroadcast.push(k);
          }
@@ -775,6 +778,14 @@ const floats = getFloat32Array(buf);
         // Broadcast the emote change to everyone immediately via playerJoined
         ioNamespace.emit("playerJoined", p);
       }
+      
+      const prevGrappleStr = p.grapplePoint ? JSON.stringify(p.grapplePoint) : "";
+      const stateGrappleStr = state.grapplePoint ? JSON.stringify(state.grapplePoint) : "";
+      if (prevGrappleStr !== stateGrappleStr) {
+        p.grapplePoint = state.grapplePoint;
+        changed = true;
+      }
+      
       if (state.maxHealth !== undefined && p.maxHealth !== state.maxHealth) {
         p.maxHealth = state.maxHealth;
         changed = true;
