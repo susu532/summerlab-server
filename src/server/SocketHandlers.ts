@@ -271,7 +271,7 @@ ctx.ioNamespace.on("connection", (socket) => {
        if (!keys || !Array.isArray(keys)) return;
        const toBroadcast = [];
        for (const k of keys) {
-         if (ctx.globalSplats.has(k)) {
+         if (typeof k === "string") {
             ctx.globalSplats.delete(k);
             toBroadcast.push(k);
          }
@@ -428,8 +428,8 @@ ctx.ioNamespace.on("connection", (socket) => {
       attacker.lastAttackTime = now;
 
       const { damage: finalDamage, isCrit: finalIsCrit } = CombatEngine.calculateDamage(attacker);
-      let damage = finalDamage;
-      const _isCrit = finalIsCrit;
+      let damage = isProjectile && clientDamage !== undefined ? clientDamage : finalDamage;
+      const _isCrit = isProjectile && clientIsCrit !== undefined ? clientIsCrit : finalIsCrit;
 
       const serverKnockbackDir = CombatEngine.calculateKnockback(attacker, isSprinting, isProjectile, knockbackDir);
 
