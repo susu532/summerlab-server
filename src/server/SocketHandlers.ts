@@ -244,9 +244,9 @@ ctx.ioNamespace.on("connection", (socket) => {
        for (const splat of data) {
          if (Array.isArray(splat) && splat.length === 7) {
             // [x, y, z, nx, ny, nz, colorHex]
-            const px = Math.floor(splat[0] * 5);
-            const py = Math.floor(splat[1] * 5);
-            const pz = Math.floor(splat[2] * 5);
+            const px = Math.round(splat[0] * 5);
+            const py = Math.round(splat[1] * 5);
+            const pz = Math.round(splat[2] * 5);
             const gridKey = `${px},${py},${pz}`;
             
             const existing = ctx.globalSplats.get(gridKey);
@@ -263,7 +263,6 @@ ctx.ioNamespace.on("connection", (socket) => {
          }
        }
        if (toBroadcast.length > 0) {
-         ctx.pendingSplats.push(...toBroadcast);
          // Immediately relay to others using volatile if we want, or batch in tick.
          // Let's rely on tick for batching if many players, but immediate broadcast is easier.
          socket.broadcast.emit("splats", toBroadcast);
@@ -851,7 +850,7 @@ const floats = getFloat32Array(buf);
         const bx = Math.floor(x);
         const by = Math.floor(y);
         const bz = Math.floor(z);
-        // splat keys are px,py,pz where px = Math.floor(splat[0] * 5)
+        // splat keys are px,py,pz where px = Math.round(splat[0] * 5)
         // A block from bx to bx+1 covers coordinates slightly outside the boundary
         for (let sx = bx * 5 - 1; sx <= bx * 5 + 5; sx++) {
           for (let sy = by * 5 - 1; sy <= by * 5 + 5; sy++) {
