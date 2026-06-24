@@ -123,51 +123,54 @@ export function createSummerLabTextureAtlas(): THREE.Texture {
     '#141519'  // GLASS_BLACK
   ];
 
+  const drawnCoordExplicit = new Map<string, boolean>();
+
   for (let blockId=0; blockId<BLOCK_UVS.length; blockId++) {
     const uvs = BLOCK_UVS[blockId];
     if (!uvs) continue;
     
     let color = SUMMERLAB_PALETTE[blockId % SUMMERLAB_PALETTE.length];
+    let hasExplicitColor = false;
     
-    if (blockId === ItemType.CONCRETE_WHITE) color = '#FFFFFF';
-    else if (blockId === ItemType.CONCRETE_BLACK) color = '#000000';
-    else if (blockId === ItemType.CONCRETE_PINK) color = '#FF69B4'; // hotpink
-    else if (blockId === ItemType.CONCRETE_PURPLE) color = '#800080'; // purple
-    else if (blockId === ItemType.CONCRETE_LIME) color = '#32CD32'; // limegreen
-    else if (blockId === ItemType.CONCRETE_MAGENTA) color = '#FF00FF'; // magenta
-    else if (blockId === ItemType.CONCRETE_ORANGE) color = '#F07613'; // orange
-    else if (blockId === ItemType.CONCRETE_LIGHT_BLUE) color = '#3AAfd9'; // light blue
-    else if (blockId === ItemType.CONCRETE_YELLOW) color = '#F8C627'; // yellow
-    else if (blockId === ItemType.CONCRETE_GRAY) color = '#3E4447'; // gray
-    else if (blockId === ItemType.CONCRETE_LIGHT_GRAY) color = '#8E8E86'; // light gray
-    else if (blockId === ItemType.CONCRETE_CYAN) color = '#158991'; // cyan
-    else if (blockId === ItemType.CONCRETE_BLUE) color = '#35399D'; // blue
-    else if (blockId === ItemType.CONCRETE_BROWN) color = '#724728'; // brown
-    else if (blockId === ItemType.CONCRETE_GREEN) color = '#546D1B'; // green
-    else if (blockId === ItemType.CONCRETE_RED) color = '#A12722'; // red
-    else if (blockId === ItemType.CONCRETE_PASTEL_PINK) color = '#FFB6C1';
-    else if (blockId === ItemType.CONCRETE_PASTEL_PURPLE) color = '#E1BEE7';
-    else if (blockId === ItemType.CONCRETE_NEON_PINK) color = '#FF1493';
-    else if (blockId === ItemType.CONCRETE_NEON_GREEN) color = '#39FF14';
-    else if (blockId === ItemType.CONCRETE_NEON_ORANGE) color = '#FF5F1F';
-    else if (blockId === ItemType.CONCRETE_NEON_YELLOW) color = '#CCFF00';
-    else if (blockId === ItemType.CONCRETE_AQUAMARINE) color = '#7FFFD4';
-    else if (blockId === ItemType.CONCRETE_MINT_CREAM) color = '#A3E4D7';
-    else if (blockId === ItemType.CONCRETE_CORAL_RED) color = '#FF7F50';
-    else if (blockId === ItemType.CONCRETE_SUNSET_GOLD) color = '#FFD700';
-    else if (blockId === ItemType.CONCRETE_LAVENDER) color = '#C3B1E1';
-    else if (blockId === ItemType.CONCRETE_SKY_BLUE) color = '#87CEEB';
-    else if (blockId === ItemType.CONCRETE_TEAL) color = '#008080';
-    else if (blockId === ItemType.CONCRETE_SANDY_BEIGE) color = '#E5C49F';
-    else if (blockId === ItemType.CONCRETE_CHOCOLATE) color = '#5C3A21';
-    else if (blockId === ItemType.CONCRETE_DEEP_BLUE) color = '#1B4F72';
-    else if (blockId === ItemType.CONCRETE_RAINBOW_RED) color = '#FF0000';
-    else if (blockId === ItemType.CONCRETE_RAINBOW_ORANGE) color = '#FFA500';
-    else if (blockId === ItemType.CONCRETE_RAINBOW_YELLOW) color = '#FFFF00';
-    else if (blockId === ItemType.CONCRETE_RAINBOW_GREEN) color = '#00FF00';
-    else if (blockId === ItemType.CONCRETE_RAINBOW_BLUE) color = '#0000FF';
-    else if (blockId === ItemType.CONCRETE_RAINBOW_INDIGO) color = '#4B0082';
-    else if (blockId === ItemType.CONCRETE_RAINBOW_VIOLET) color = '#EE82EE';
+    if (blockId === ItemType.CONCRETE_WHITE) { color = '#FFFFFF'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_BLACK) { color = '#000000'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_PINK) { color = '#FF69B4'; hasExplicitColor = true; } // hotpink
+    else if (blockId === ItemType.CONCRETE_PURPLE) { color = '#800080'; hasExplicitColor = true; } // purple
+    else if (blockId === ItemType.CONCRETE_LIME) { color = '#32CD32'; hasExplicitColor = true; } // limegreen
+    else if (blockId === ItemType.CONCRETE_MAGENTA) { color = '#FF00FF'; hasExplicitColor = true; } // magenta
+    else if (blockId === ItemType.CONCRETE_ORANGE) { color = '#F07613'; hasExplicitColor = true; } // orange
+    else if (blockId === ItemType.CONCRETE_LIGHT_BLUE) { color = '#3AAfd9'; hasExplicitColor = true; } // light blue
+    else if (blockId === ItemType.CONCRETE_YELLOW) { color = '#F8C627'; hasExplicitColor = true; } // yellow
+    else if (blockId === ItemType.CONCRETE_GRAY) { color = '#3E4447'; hasExplicitColor = true; } // gray
+    else if (blockId === ItemType.CONCRETE_LIGHT_GRAY) { color = '#8E8E86'; hasExplicitColor = true; } // light gray
+    else if (blockId === ItemType.CONCRETE_CYAN) { color = '#158991'; hasExplicitColor = true; } // cyan
+    else if (blockId === ItemType.CONCRETE_BLUE) { color = '#35399D'; hasExplicitColor = true; } // blue
+    else if (blockId === ItemType.CONCRETE_BROWN) { color = '#724728'; hasExplicitColor = true; } // brown
+    else if (blockId === ItemType.CONCRETE_GREEN) { color = '#546D1B'; hasExplicitColor = true; } // green
+    else if (blockId === ItemType.CONCRETE_RED) { color = '#A12722'; hasExplicitColor = true; } // red
+    else if (blockId === ItemType.CONCRETE_PASTEL_PINK) { color = '#FFB6C1'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_PASTEL_PURPLE) { color = '#E1BEE7'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_NEON_PINK) { color = '#FF1493'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_NEON_GREEN) { color = '#39FF14'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_NEON_ORANGE) { color = '#FF5F1F'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_NEON_YELLOW) { color = '#CCFF00'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_AQUAMARINE) { color = '#7FFFD4'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_MINT_CREAM) { color = '#A3E4D7'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_CORAL_RED) { color = '#FF7F50'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_SUNSET_GOLD) { color = '#FFD700'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_LAVENDER) { color = '#C3B1E1'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_SKY_BLUE) { color = '#87CEEB'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_TEAL) { color = '#008080'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_SANDY_BEIGE) { color = '#E5C49F'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_CHOCOLATE) { color = '#5C3A21'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_DEEP_BLUE) { color = '#1B4F72'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_RAINBOW_RED) { color = '#FF0000'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_RAINBOW_ORANGE) { color = '#FFA500'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_RAINBOW_YELLOW) { color = '#FFFF00'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_RAINBOW_GREEN) { color = '#00FF00'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_RAINBOW_BLUE) { color = '#0000FF'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_RAINBOW_INDIGO) { color = '#4B0082'; hasExplicitColor = true; }
+    else if (blockId === ItemType.CONCRETE_RAINBOW_VIOLET) { color = '#EE82EE'; hasExplicitColor = true; }
 
     const drawnOptions = new Set<string>();
     for (let face = 0; face < 6; face++) {
@@ -175,6 +178,14 @@ export function createSummerLabTextureAtlas(): THREE.Texture {
        const key = `${tx},${ty}`;
        if (drawnOptions.has(key)) continue;
        drawnOptions.add(key);
+
+       const isExplicitAlready = drawnCoordExplicit.get(key);
+       if (isExplicitAlready && !hasExplicitColor) {
+          continue;
+       }
+       if (hasExplicitColor) {
+          drawnCoordExplicit.set(key, true);
+       }
 
        let hasFace = false;
        if (blockId === ItemType.GLOWSTONE || blockId === ItemType.BLUE_STONE) hasFace = true;

@@ -10,6 +10,7 @@ interface UIState {
   isLocked: boolean;
   isServerJoinOpen: boolean;
   isLaunchMenuOpen: boolean;
+  isHubPageOpen: boolean;
   isChestOpen: boolean;
   isLoadoutOpen: boolean;
   isHUDVisible: boolean;
@@ -25,6 +26,7 @@ interface UIState {
   setLocked: (locked: boolean) => void;
   setServerJoinOpen: (open: boolean) => void;
   setLaunchMenuOpen: (open: boolean) => void;
+  setHubPageOpen: (open: boolean) => void;
   setChestOpen: (open: boolean) => void;
   setLoadoutOpen: (open: boolean) => void;
   setHUDVisible: (visible: boolean) => void;
@@ -44,6 +46,7 @@ export const useUIStore = create<UIState>((set) => ({
   isLocked: false,
   isServerJoinOpen: false,
   isLaunchMenuOpen: false,
+  isHubPageOpen: true,
   isChestOpen: false,
   isLoadoutOpen: false,
   isHUDVisible: true,
@@ -59,6 +62,7 @@ export const useUIStore = create<UIState>((set) => ({
   setLocked: (locked) => set({ isLocked: locked }),
   setServerJoinOpen: (open) => set({ isServerJoinOpen: open }),
   setLaunchMenuOpen: (open) => set({ isLaunchMenuOpen: open }),
+  setHubPageOpen: (open) => set({ isHubPageOpen: open }),
   setChestOpen: (open) => set({ isChestOpen: open }),
   setLoadoutOpen: (open) => set({ isLoadoutOpen: open }),
   setHUDVisible: (visible) => set({ isHUDVisible: visible }),

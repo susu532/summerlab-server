@@ -16,7 +16,6 @@ export interface Keybinds {
   toggleHUD: string;
   leaderboard: string;
   openFluidColorPicker: string;
-  feedback: string;
   slot1: string;
   slot2: string;
   slot3: string;
@@ -35,12 +34,12 @@ export interface GameSettings {
   sensitivity: number;
   invertMouse: boolean;
   volume: number;
+  musicVolume: number;
   showDebug: boolean;
   performanceMode: boolean;
   premiumShaders: boolean;
   hideShininess: boolean;
   language: string;
-  serverRegion: string;
   keybinds: Keybinds;
 }
 
@@ -60,7 +59,6 @@ export const DEFAULT_KEYBINDS: Keybinds = {
   toggleHUD: "KeyN",
   leaderboard: "Tab",
   openFluidColorPicker: "KeyF",
-   feedback: 'KeyG',
   slot1: "Digit1",
   slot2: "Digit2",
   slot3: "Digit3",
@@ -79,12 +77,12 @@ export const DEFAULT_SETTINGS: GameSettings = {
   sensitivity: 0.002,
   invertMouse: false,
   volume: 0.5,
+  musicVolume: 0.5,
   showDebug: false,
   performanceMode: false,
   premiumShaders: false,
   hideShininess: true,
-  language: 'en',
-  serverRegion: 'auto',
+  language: "en",
   keybinds: { ...DEFAULT_KEYBINDS },
 };
 

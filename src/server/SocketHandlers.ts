@@ -217,6 +217,18 @@ ctx.ioNamespace.on("connection", (socket) => {
       }
     });
 
+    socket.on("updateName", (newName) => {
+      const player = players[socket.id];
+      if (player && typeof newName === "string") {
+        const rawName = newName.slice(0, 20);
+        const _moderation = chatModerator.moderateMessage(socket.id, rawName, { skipSpamCheck: true });
+        const finalName = _moderation.isAllowed ? rawName : "Unknown Player";
+        player.name = finalName;
+        // Broadcast to nearby players so they update the nameplate
+        broadcastToNearby("playerJoined", player, player.position.x, player.position.z, 22500);
+      }
+    });
+
     // Handle skill updates
     socket.on("skillUpdate", (data) => {
       const player = players[socket.id];
