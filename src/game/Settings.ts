@@ -1,4 +1,3 @@
-import { getRandomCutePlayerName } from "./CuteNames";
 
 export interface Keybinds {
   forward: string;
@@ -71,7 +70,7 @@ export const DEFAULT_KEYBINDS: Keybinds = {
 };
 
 export const DEFAULT_SETTINGS: GameSettings = {
-  username: getRandomCutePlayerName(),
+  username: "",
   renderDistance: 7,
   fov: 75,
   sensitivity: 0.002,

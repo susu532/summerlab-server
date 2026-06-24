@@ -27,7 +27,6 @@ const bakedBlocks = new Map<string, number>(Object.entries(bakedBlocksData));
 import { spawnMobsTick } from "./MobSpawner";
 
 import { IServerPlayer, ITickMob, IDroppedItemState, IMinionState } from "../types/shared";
-import { getRandomCutePlayerName } from "../game/CuteNames";
 import type { Worker } from "worker_threads";
 
 export function createGameServer(io: any, db: any, mode: GameModeInfo, genWorker?: Worker) {
@@ -706,7 +705,7 @@ const ctx: import("./GameContext").GameContext = {
       velocity: { x: 0, y: 0, z: 0 },
       rotation: respawnData.yaw !== undefined ? { x: 0, y: respawnData.yaw, z: 0 } : { x: 0, y: 0, z: 0 },
       skinSeed: "cool_kid_123",
-      name: "smol fish20563008",
+      name: "smol fish",
       health: 100,
       maxHealth: 100,
       defense: 0,
